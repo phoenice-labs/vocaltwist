@@ -1,0 +1,46 @@
+# VocalTwist — Python dependencies
+# All versions pinned exactly for supply chain security.
+# Run: pip install -r requirements.txt
+
+# ── Web framework ──────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+python-multipart==0.0.9
+
+# ── Data validation ────────────────────────────────────────────────────────────
+pydantic==2.9.2
+pydantic-settings==2.5.2
+
+# ── STT — faster-whisper (wraps CTranslate2 + Whisper weights) ────────────────
+# 1.1.1: fixes VAD crash on empty-segment language detection (bug in 1.0.3),
+#        and is compatible with av>=13 (no pre-built av<13 wheel on Python 3.13).
+faster-whisper==1.1.1
+# onnxruntime is required by faster-whisper's server-side Silero VAD filter.
+onnxruntime==1.24.4
+
+# ── TTS — Microsoft Edge Neural TTS (no API key required) ─────────────────────
+# 6.x used a TrustedClientToken that Microsoft revoked (causes 403 WSS error).
+# 7.x uses a new DRM-based auth that works as of 2025.
+edge-tts==7.2.8
+
+# ── Async HTTP client (LLM calls, healthchecks) ───────────────────────────────
+httpx==0.27.2
+
+# ── Translation (optional, disabled by default — sends text to Google) ────────
+deep-translator==1.11.4
+
+# ── Security & configuration ───────────────────────────────────────────────────
+python-dotenv==1.0.1
+itsdangerous==2.2.0
+
+# ── Structured logging ─────────────────────────────────────────────────────────
+structlog==24.4.0
+
+# ── Testing ────────────────────────────────────────────────────────────────────
+pytest==8.3.3
+pytest-asyncio==0.24.0
+pytest-mock==3.14.0
+# httpx already listed above — used by both app and tests
+
+# ── Dev / linting ──────────────────────────────────────────────────────────────
+ruff==0.6.9

@@ -1,0 +1,471 @@
+openapi: "3.1.0"
+
+info:
+  title: VocalTwist Voice Middleware API
+  version: "1.0.0"
+  description: |
+    VocalTwist is a plug-and-play voice middleware layer that provides
+    speech-to-text (STT), text-to-speech (TTS), and health/discovery endpoints.
+
+    It is designed to be mounted as a FastAPI router inside any existing
+    application, or run standalone via `VocalTwistTest/app.py`.
+
+    ## Authentication
+    API key authentication is **optional** (disabled by default for demo mode).
+    When enabled, every request must include `X-API-Key: <key>`.
+
+    ## Rate limits
+    Default: 20 requests/minute on transcribe endpoints, 30/minute on speak.
+    Configurable via environment variables.
+
+servers:
+  - url: http://localhost:8000
+    description: Local development / demo
+
+security: []
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    TranscribeResponse:
+      type: object
+      required: [text, display_text, language, duration_ms]
+      properties:
+        text:
+          type: string
+          description: Normalised transcript (lowercased, trimmed).
+          example: "hello world"
+        display_text:
+          type: string
+          description: Display-ready transcript (original casing from the model).
+          example: "Hello world"
+        language:
+          type: string
+          description: Detected BCP-47 language code.
+          example: "en"
+        duration_ms:
+          type: integer
+          description: Audio duration in milliseconds.
+          example: 2340
+
+    SpeakRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: Text to synthesise.
+          example: "Hello, how can I help you?"
+        voice:
+          type: string
+          nullable: true
+          description: |
+            edge-tts neural voice name, e.g. `en-US-AriaNeural`.
+            Defaults to the server's `VOCALTWIST_DEFAULT_VOICE`.
+          example: "en-US-AriaNeural"
+        language:
+          type: string
+          nullable: true
+          description: |
+            BCP-47 language code used to auto-select a voice when `voice`
+            is not specified.
+          example: "en"
+
+    HealthResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+          example: ok
+        version:
+          type: string
+          example: "0.1.0"
+        uptime_secs:
+          type: number
+          description: Seconds since the process started.
+          example: 3612.4
+        providers:
+          type: object
+          properties:
+            stt:
+              type: string
+              example: whisper
+            tts:
+              type: string
+              example: edge_tts
+
+    ProvidersResponse:
+      type: object
+      properties:
+        stt:
+          type: array
+          items:
+            type: string
+          example: ["whisper"]
+        tts:
+          type: array
+          items:
+            type: string
+          example: ["edge_tts"]
+
+    VoiceInfo:
+      type: object
+      required: [name, language, gender]
+      properties:
+        name:
+          type: string
+          example: "en-US-AriaNeural"
+        language:
+          type: string
+          example: "en-US"
+        gender:
+          type: string
+          enum: [Female, Male, Unknown]
+          example: Female
+        locale:
+          type: string
+          example: "en-US"
+
+    VoicesResponse:
+      type: object
+      description: Map of language code → list of available voices.
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/VoiceInfo'
+      example:
+        en:
+          - name: en-US-AriaNeural
+            language: en-US
+            gender: Female
+            locale: en-US
+        hi:
+          - name: hi-IN-SwaraNeural
+            language: hi-IN
+            gender: Female
+            locale: hi-IN
+
+    ChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        language:
+          type: string
+          default: "en"
+          example: "en"
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant, system]
+          example: user
+        content:
+          type: string
+          minLength: 1
+          example: "What is the capital of France?"
+
+    ChatResponse:
+      type: object
+      required: [reply, is_emergency]
+      properties:
+        reply:
+          type: string
+          example: "The capital of France is Paris."
+        is_emergency:
+          type: boolean
+          description: True if the reply contains emergency-related keywords.
+          example: false
+
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          example: "Audio file too large"
+        request_id:
+          type: string
+          description: Correlation ID for log tracing.
+          example: "req_7f3c1a2b"
+
+paths:
+  /api/transcribe:
+    post:
+      operationId: transcribe
+      summary: Transcribe an audio file to text
+      description: |
+        Upload an audio file and receive a JSON transcript.
+        Supported formats: WebM, WAV, MP4, OGG, MPEG, FLAC.
+        Maximum file size: 10 MB (configurable).
+      tags: [STT]
+      security:
+        - {}
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                  description: Audio file to transcribe.
+                language:
+                  type: string
+                  description: Hint the expected language (BCP-47). Optional.
+                  example: "en"
+      responses:
+        "200":
+          description: Successful transcription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscribeResponse'
+        "400":
+          description: Invalid audio file or unsupported format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "401":
+          description: API key required but missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "413":
+          description: Audio file exceeds the configured size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "422":
+          description: Validation error (missing required field)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        "500":
+          description: Internal transcription error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/transcribe-ambient:
+    post:
+      operationId: transcribeAmbient
+      summary: Transcribe with forced VAD filter (ambient mode)
+      description: |
+        Identical to `/api/transcribe` but always enables the Silero VAD
+        pre-filter. Use this endpoint from `AmbientVAD` in the frontend.
+      tags: [STT]
+      security:
+        - {}
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [audio]
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                language:
+                  type: string
+                  example: "en"
+      responses:
+        "200":
+          description: Successful transcription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscribeResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "429":
+          $ref: '#/components/responses/TooManyRequests'
+        "500":
+          $ref: '#/components/responses/InternalError'
+
+  /api/speak:
+    post:
+      operationId: speak
+      summary: Synthesise text to MP3 audio
+      description: |
+        Convert text to speech using the configured TTS provider (edge-tts by
+        default). Returns raw MP3 bytes (`audio/mpeg`).
+      tags: [TTS]
+      security:
+        - {}
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeakRequest'
+            example:
+              text: "Hello! How can I help you today?"
+              voice: "en-US-AriaNeural"
+              language: "en"
+      responses:
+        "200":
+          description: MP3 audio bytes
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "429":
+          $ref: '#/components/responses/TooManyRequests'
+        "500":
+          $ref: '#/components/responses/InternalError'
+
+  /api/health:
+    get:
+      operationId: health
+      summary: Health check
+      description: Returns service health, version, provider info, and uptime.
+      tags: [Observability]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                version: "0.1.0"
+                uptime_secs: 3612.4
+                providers:
+                  stt: whisper
+                  tts: edge_tts
+
+  /api/providers:
+    get:
+      operationId: listProviders
+      summary: List registered STT/TTS providers
+      tags: [Observability]
+      responses:
+        "200":
+          description: Available providers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvidersResponse'
+
+  /api/voices:
+    get:
+      operationId: listVoices
+      summary: List available TTS voices grouped by language
+      tags: [TTS]
+      responses:
+        "200":
+          description: Voices grouped by language code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoicesResponse'
+
+  /api/chat:
+    post:
+      operationId: chat
+      summary: Send a chat message to the LLM (VocalTwistTest demo only)
+      description: |
+        Forwards the conversation history to LM Studio and returns the
+        assistant reply. Protected by per-IP rate limiting (10 req/min)
+        and a circuit breaker (opens after 3 consecutive LLM failures).
+      tags: [Demo]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            example:
+              messages:
+                - role: user
+                  content: "What is the weather like in Paris?"
+              language: "en"
+      responses:
+        "200":
+          description: Assistant reply (may be a fallback if LLM is unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        "422":
+          $ref: '#/components/responses/UnprocessableEntity'
+        "429":
+          $ref: '#/components/responses/TooManyRequests'
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: API key missing or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,270 @@
+/**
+ * vocal-twist.css
+ * Default styles for the <vocal-twist> Web Component shadow DOM.
+ *
+ * CSS custom properties can be overridden from the host document:
+ *   vocal-twist {
+ *     --vt-primary: hotpink;
+ *   }
+ */
+
+/* ── Design tokens ──────────────────────────────────────────────────────────── */
+:host {
+  /* Colours */
+  --vt-primary:        #4f46e5;
+  --vt-primary-hover:  #4338ca;
+  --vt-primary-active: #3730a3;
+  --vt-danger:         #ef4444;
+  --vt-success:        #22c55e;
+  --vt-warn:           #f59e0b;
+  --vt-bg:             #ffffff;
+  --vt-surface:        #f8fafc;
+  --vt-border:         #e2e8f0;
+  --vt-text:           #1e293b;
+  --vt-text-muted:     #64748b;
+
+  /* Sizes */
+  --vt-btn-size:       3.5rem;
+  --vt-btn-icon-size:  1.5rem;
+  --vt-radius:         9999px;
+  --vt-radius-card:    0.75rem;
+  --vt-gap:            0.75rem;
+
+  /* Animation */
+  --vt-pulse-color:    rgba(79, 70, 229, 0.35);
+  --vt-ring-color:     rgba(79, 70, 229, 0.25);
+  --vt-transition:     200ms ease;
+
+  /* Typography */
+  --vt-font:           system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --vt-font-size:      0.875rem;
+  --vt-font-size-sm:   0.75rem;
+
+  display: inline-block;
+  font-family: var(--vt-font);
+  font-size: var(--vt-font-size);
+  color: var(--vt-text);
+}
+
+/* Dark-mode token overrides */
+@media (prefers-color-scheme: dark) {
+  :host {
+    --vt-bg:          #0f172a;
+    --vt-surface:     #1e293b;
+    --vt-border:      #334155;
+    --vt-text:        #f1f5f9;
+    --vt-text-muted:  #94a3b8;
+    --vt-pulse-color: rgba(99, 102, 241, 0.40);
+    --vt-ring-color:  rgba(99, 102, 241, 0.30);
+  }
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────────── */
+.vt-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vt-gap);
+  padding: 1rem;
+  background: var(--vt-bg);
+  border: 1px solid var(--vt-border);
+  border-radius: var(--vt-radius-card);
+  min-width: 180px;
+  max-width: 420px;
+}
+
+/* ── Mic button ─────────────────────────────────────────────────────────────── */
+.vt-mic-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--vt-btn-size);
+  height: var(--vt-btn-size);
+  border: none;
+  border-radius: var(--vt-radius);
+  background: var(--vt-primary);
+  color: #fff;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background var(--vt-transition),
+    transform  var(--vt-transition),
+    box-shadow var(--vt-transition);
+  /* Stacking context for the pulse ring */
+  isolation: isolate;
+}
+
+.vt-mic-button svg {
+  width: var(--vt-btn-icon-size);
+  height: var(--vt-btn-icon-size);
+  pointer-events: none;
+  fill: currentColor;
+}
+
+.vt-mic-button:hover {
+  background: var(--vt-primary-hover);
+  transform: scale(1.05);
+}
+
+.vt-mic-button:active {
+  background: var(--vt-primary-active);
+  transform: scale(0.97);
+}
+
+.vt-mic-button:focus-visible {
+  box-shadow: 0 0 0 3px var(--vt-bg), 0 0 0 5px var(--vt-primary);
+}
+
+/* Recording state */
+.vt-mic-button[data-state="recording"] {
+  background: var(--vt-danger);
+  animation: vt-pulse-record 1s ease-in-out infinite;
+}
+
+/* Ambient listening / buffering state */
+.vt-mic-button[data-state="ambient-listening"],
+.vt-mic-button[data-state="ambient-buffering"],
+.vt-mic-button[data-state="ambient-transcribing"] {
+  background: var(--vt-success);
+}
+
+/* Transcribing / speaking — subtle throb */
+.vt-mic-button[data-state="transcribing"],
+.vt-mic-button[data-state="speaking"] {
+  background: var(--vt-warn);
+  animation: vt-throb 1.2s ease-in-out infinite;
+  cursor: default;
+}
+
+/* Disabled state */
+.vt-mic-button:disabled,
+.vt-mic-button[data-state="transcribing"],
+.vt-mic-button[data-state="speaking"] {
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+/* ── Pulse ring (recording indicator) ───────────────────────────────────────── */
+.vt-mic-button::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--vt-radius);
+  border: 2px solid transparent;
+  pointer-events: none;
+  transition: border-color var(--vt-transition);
+}
+
+.vt-mic-button[data-state="recording"]::before {
+  border-color: var(--vt-danger);
+  animation: vt-ring-expand 1s ease-in-out infinite;
+}
+
+/* ── Ambient mode pulsing ring ───────────────────────────────────────────────── */
+.vt-ambient-ring {
+  display: none;
+  position: absolute;
+  inset: -8px;
+  border-radius: var(--vt-radius);
+  border: 2px solid var(--vt-ring-color);
+  pointer-events: none;
+}
+
+.vt-mic-button[data-state="ambient-listening"] .vt-ambient-ring,
+.vt-mic-button[data-state="ambient-buffering"] .vt-ambient-ring {
+  display: block;
+  animation: vt-ambient-ring 2s ease-in-out infinite;
+}
+
+/* ── Status text ────────────────────────────────────────────────────────────── */
+.vt-status {
+  font-size: var(--vt-font-size-sm);
+  color: var(--vt-text-muted);
+  letter-spacing: 0.01em;
+  text-align: center;
+  min-height: 1.2em;
+  transition: color var(--vt-transition);
+}
+
+.vt-status[data-state="recording"]   { color: var(--vt-danger); }
+.vt-status[data-state="speaking"]    { color: var(--vt-warn); }
+.vt-status[data-state="ambient-listening"] { color: var(--vt-success); }
+
+/* ── Transcript display ──────────────────────────────────────────────────────── */
+.vt-transcript {
+  width: 100%;
+  min-height: 2.4em;
+  padding: 0.5rem 0.625rem;
+  background: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: calc(var(--vt-radius-card) / 2);
+  font-size: var(--vt-font-size);
+  color: var(--vt-text);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+  box-sizing: border-box;
+  transition: background var(--vt-transition);
+}
+
+.vt-transcript:empty::before {
+  content: 'Transcript will appear here…';
+  color: var(--vt-text-muted);
+  font-style: italic;
+}
+
+/* ── Audio level bar ─────────────────────────────────────────────────────────── */
+.vt-level-bar {
+  width: 100%;
+  height: 3px;
+  background: var(--vt-border);
+  border-radius: var(--vt-radius);
+  overflow: hidden;
+}
+
+.vt-level-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--vt-primary);
+  border-radius: var(--vt-radius);
+  transition: width 80ms linear;
+}
+
+.vt-mic-button[data-state="recording"] ~ .vt-level-bar .vt-level-fill {
+  background: var(--vt-danger);
+}
+
+/* ── Keyframe animations ─────────────────────────────────────────────────────── */
+@keyframes vt-pulse-record {
+  0%, 100% { box-shadow: 0 0 0 0   var(--vt-pulse-color); }
+  50%       { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
+}
+
+@keyframes vt-ring-expand {
+  0%   { transform: scale(1);    opacity: 1; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+@keyframes vt-ambient-ring {
+  0%, 100% { transform: scale(1);    opacity: 0.8; }
+  50%       { transform: scale(1.35); opacity: 0.2; }
+}
+
+@keyframes vt-throb {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(0.97); }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 320px) {
+  :host {
+    --vt-btn-size:      3rem;
+    --vt-btn-icon-size: 1.25rem;
+  }
+
+  .vt-container {
+    min-width: 140px;
+    padding: 0.75rem;
+  }
+}

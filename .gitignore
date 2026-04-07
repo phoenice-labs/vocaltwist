@@ -1,0 +1,79 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+.eggs/
+wheels/
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+# Keep the example file
+!.env.example
+
+# ── Test / coverage ────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+junit.xml
+test-results/
+
+# ── Compiled frontend ──────────────────────────────────────────────────────────
+frontend/dist/
+frontend/*.min.js
+frontend/*.min.css
+frontend/*.map
+
+# ── Node (build tooling only) ──────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log
+.npm/
+package-lock.json
+
+# ── Docker ─────────────────────────────────────────────────────────────────────
+*.tar
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Whisper model cache ────────────────────────────────────────────────────────
+# Whisper auto-downloads models to ~/.cache/huggingface — nothing to ignore here
+# but ignore any locally cached copies if someone places them in the repo
+models/
+
+# ── Temporary / scratch ───────────────────────────────────────────────────────
+*.tmp
+*.bak
+*.swp
+plan.md

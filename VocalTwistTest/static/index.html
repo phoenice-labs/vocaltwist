@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocalTwist — Voice Chatbot Demo</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #1a1a2e;
+      --chat-bg:     #16213e;
+      --surface:     #0f3460;
+      --accent:      #533483;
+      --accent-glow: #7b4fc9;
+      --user-bubble: #0f3460;
+      --bot-bubble:  #1e2a4a;
+      --text:        #e0e0f0;
+      --text-dim:    #8892b0;
+      --border:      #2a3560;
+      --danger:      #e74c3c;
+      --success:     #2ecc71;
+      --warning:     #f39c12;
+      --radius:      12px;
+      --radius-sm:   6px;
+      --shadow:      0 4px 24px rgba(0,0,0,.4);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* ── Layout ───────────────────────────────────────────────────────────── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .85rem 1.25rem;
+      background: var(--chat-bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      background: linear-gradient(135deg, #a78bfa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    /* LM Studio status pill */
+    .llm-status {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .75rem;
+      color: var(--text-dim);
+      padding: .25rem .6rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+    }
+    .llm-status .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      transition: background .3s;
+    }
+    .llm-status.online .dot  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .llm-status.offline .dot { background: var(--danger);  }
+
+    /* Language selector */
+    .lang-select {
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: .8rem;
+      padding: .25rem .5rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .lang-select:focus { border-color: var(--accent-glow); }
+
+    /* ── Status bar ───────────────────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem 1.25rem;
+      font-size: .75rem;
+      color: var(--text-dim);
+      background: var(--chat-bg);
+      border-bottom: 1px solid var(--border);
+      min-height: 2rem;
+      flex-shrink: 0;
+      transition: color .2s;
+    }
+    .status-bar .status-icon { font-size: .9rem; }
+    .status-bar.recording { color: var(--danger); }
+    .status-bar.transcribing { color: var(--warning); }
+    .status-bar.speaking { color: #60a5fa; }
+    .status-bar.ambient  { color: var(--success); }
+
+    /* ── Messages ─────────────────────────────────────────────────────────── */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      background: var(--chat-bg);
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .msg {
+      display: flex;
+      gap: .6rem;
+      animation: msg-in .25s ease;
+      max-width: 80%;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user  { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.assistant { align-self: flex-start; }
+
+    .msg-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .9rem;
+      flex-shrink: 0;
+      background: var(--border);
+    }
+    .msg.user .msg-avatar     { background: var(--accent); }
+    .msg.assistant .msg-avatar { background: var(--surface); }
+
+    .msg-bubble {
+      padding: .65rem .9rem;
+      border-radius: var(--radius);
+      font-size: .9rem;
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .msg.user .msg-bubble {
+      background: var(--user-bubble);
+      border-radius: var(--radius) 2px var(--radius) var(--radius);
+    }
+    .msg.assistant .msg-bubble {
+      background: var(--bot-bubble);
+      border-radius: 2px var(--radius) var(--radius) var(--radius);
+      border: 1px solid var(--border);
+    }
+    .msg.emergency .msg-bubble {
+      border: 1px solid var(--danger);
+      background: rgba(231,76,60,.12);
+    }
+
+    /* Thinking / typing indicator */
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      padding: .65rem .9rem;
+      background: var(--bot-bubble);
+      border-radius: 2px var(--radius) var(--radius) var(--radius);
+      border: 1px solid var(--border);
+      width: fit-content;
+    }
+    .thinking-dots { display: flex; gap: 4px; }
+    .thinking-dots span {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      animation: blink 1.2s infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: .2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: .25; transform: scale(.8); }
+      40%           { opacity: 1;   transform: scale(1); }
+    }
+
+    /* Empty state */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 2rem;
+    }
+    .empty-state .icon { font-size: 3rem; opacity: .4; }
+    .empty-state p { font-size: .9rem; max-width: 320px; }
+
+    /* ── Input area ───────────────────────────────────────────────────────── */
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      padding: .75rem 1.25rem 1rem;
+      background: var(--chat-bg);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Voice controls row */
+    .voice-controls {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* Text input row */
+    .text-row {
+      display: flex;
+      gap: .5rem;
+    }
+    #txt-input {
+      flex: 1;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      font-size: .9rem;
+      padding: .55rem 1rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #txt-input:focus { border-color: var(--accent-glow); }
+    #txt-input::placeholder { color: var(--text-dim); }
+
+    /* Buttons */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      gap: .35rem;
+      padding: .55rem 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 500;
+      transition: all .15s;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-glow); transform: scale(1.03); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,.1); }
+
+    /* Mic button */
+    #btn-mic {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.07);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1.15rem;
+      transition: all .15s;
+    }
+    #btn-mic:hover:not(:disabled) { background: rgba(255,255,255,.14); }
+    #btn-mic.recording {
+      background: var(--danger) !important;
+      border-color: var(--danger);
+      animation: pulse-mic 1s infinite;
+    }
+    @keyframes pulse-mic {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(231,76,60,.6); }
+      50%       { box-shadow: 0 0 0 8px rgba(231,76,60,0); }
+    }
+
+    /* Ambient toggle */
+    #btn-ambient {
+      font-size: .8rem;
+      padding: .45rem .85rem;
+    }
+    #btn-ambient.active {
+      background: var(--success);
+      color: #0d1117;
+      border-color: var(--success);
+      animation: pulse-ambient 2s infinite;
+    }
+    @keyframes pulse-ambient {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(46,204,113,.5); }
+      50%       { box-shadow: 0 0 0 6px rgba(46,204,113,0); }
+    }
+
+    /* Level meter */
+    #level-meter {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #level-meter-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--success), var(--accent-glow));
+      border-radius: 2px;
+      transition: width .05s linear;
+    }
+
+    /* Send button */
+    #btn-send {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      font-size: 1rem;
+      padding: 0;
+    }
+
+    /* Emergency banner */
+    #emergency-banner {
+      display: none;
+      padding: .6rem 1rem;
+      background: rgba(231,76,60,.15);
+      border: 1px solid var(--danger);
+      border-radius: var(--radius-sm);
+      color: #ff6b6b;
+      font-size: .85rem;
+      margin-bottom: .25rem;
+      text-align: center;
+    }
+    #emergency-banner.visible { display: block; animation: msg-in .3s ease; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .msg { max-width: 95%; }
+      header h1 { font-size: .95rem; }
+      .app { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <span style="font-size:1.4rem">🎙</span>
+    <h1>VocalTwist — Voice Chatbot</h1>
+    <div class="header-right">
+      <div class="llm-status" id="llm-status">
+        <div class="dot"></div>
+        <span id="llm-status-text">LM Studio</span>
+      </div>
+      <select class="lang-select" id="lang-select" title="Conversation language">
+        <option value="en">🇬🇧 English</option>
+        <option value="hi">🇮🇳 Hindi</option>
+        <option value="es">🇪🇸 Spanish</option>
+        <option value="fr">🇫🇷 French</option>
+        <option value="de">🇩🇪 German</option>
+        <option value="zh">🇨🇳 Chinese</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Status bar -->
+  <div class="status-bar" id="status-bar">
+    <span class="status-icon" id="status-icon">💬</span>
+    <span id="status-text">Ready — type a message or use the mic</span>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages" id="messages">
+    <div class="empty-state" id="empty-state">
+      <div class="icon">🎙</div>
+      <p>Start a conversation by typing below or holding the microphone button to speak.</p>
+      <p style="font-size:.8rem; opacity:.6">Powered by VocalTwist + LM Studio (mistralai/ministral-3-3b)</p>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="input-area">
+    <div id="emergency-banner">
+      🚨 Emergency detected — please call <strong>911</strong> or your local emergency services immediately.
+    </div>
+
+    <!-- Voice controls -->
+    <div class="voice-controls">
+      <button class="btn btn-ghost" id="btn-mic" title="Hold to record (push-to-talk)">🎤</button>
+      <div id="level-meter"><div id="level-meter-bar"></div></div>
+      <button class="btn btn-ghost" id="btn-ambient" title="Toggle ambient (always-on) listening">🔁 Ambient</button>
+      <button class="btn btn-ghost" id="btn-clear" title="Clear conversation" style="padding:.45rem .7rem; font-size:.8rem;">🗑</button>
+    </div>
+
+    <!-- Text input -->
+    <div class="text-row">
+      <input type="text" id="txt-input" placeholder="Type a message…" autocomplete="off" />
+      <button class="btn btn-primary" id="btn-send" title="Send">➤</button>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<!-- 1. ONNX Runtime Web — required by vad-web -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
+<!-- 2. VAD Web — Silero VAD in-browser -->
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
+<!-- 3. AmbientVAD -->
+<script src="/ambient-vad.js"></script>
+<!-- 4. VocalTwist library + <vocal-twist> element -->
+<link rel="stylesheet" href="/vocal-twist.css" />
+<script src="/vocal-twist.js"></script>
+<!-- 5. Chatbot logic -->
+<script src="/chatbot.js"></script>
+</body>
+</html>

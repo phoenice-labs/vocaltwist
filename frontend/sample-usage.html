@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocalTwist — Integration Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 2rem 1rem;
+      line-height: 1.6;
+    }
+    h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: #4f46e5; }
+    .subtitle { color: #64748b; margin-bottom: 2rem; }
+    .demo-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      max-width: 640px;
+    }
+    .demo-card p { color: #475569; font-size: 0.875rem; margin-bottom: 1rem; }
+    pre {
+      background: #0f172a; color: #e2e8f0;
+      padding: 1rem; border-radius: 0.5rem;
+      font-size: 0.8rem; overflow-x: auto;
+      margin-bottom: 1rem;
+      white-space: pre-wrap;
+    }
+    .log {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+      border-radius: 0.5rem; padding: 0.75rem;
+      font-size: 0.8rem; color: #475569;
+      min-height: 4rem; max-height: 10rem;
+      overflow-y: auto; font-family: monospace;
+    }
+    .log p { margin: 0.1rem 0; }
+    .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.75rem 0; }
+    button.action {
+      padding: 0.4rem 1rem; border-radius: 0.375rem;
+      border: 1px solid #cbd5e1; background: #fff;
+      cursor: pointer; font-size: 0.85rem;
+      transition: background 150ms;
+    }
+    button.action:hover { background: #f1f5f9; }
+    button.action.primary {
+      background: #4f46e5; color: #fff; border-color: #4f46e5;
+    }
+    button.action.primary:hover { background: #4338ca; }
+    label { font-size: 0.85rem; color: #475569; }
+    input[type="text"] {
+      width: 100%; padding: 0.4rem 0.6rem;
+      border: 1px solid #cbd5e1; border-radius: 0.375rem;
+      font-size: 0.875rem; margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+<h1>VocalTwist</h1>
+<p class="subtitle">Voice middleware integration demo — two usage patterns</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     EXAMPLE 1 — Web Component (<vocal-twist>)
+     The simplest integration: drop a single tag into your HTML.
+     ─────────────────────────────────────────────────────────────────────── -->
+<div class="demo-card">
+  <h2>Example 1 — Web Component</h2>
+  <p>
+    Drop <code>&lt;vocal-twist&gt;</code> anywhere in your HTML.
+    Hold the mic button to record (push-to-talk) or add the
+    <code>ambient</code> attribute for always-on listening.
+  </p>
+
+  <!--
+    Attributes:
+      language      BCP-47 code for transcription & TTS (default: en)
+      transcribe-url STT REST endpoint  (default: /api/transcribe)
+      speak-url      TTS REST endpoint  (default: /api/speak)
+      ambient-url    Ambient STT endpoint (default: /api/transcribe-ambient)
+      ambient        Enable always-on ambient listening (boolean flag)
+      voice          TTS voice name passed to the backend
+      api-key        Forwarded as X-API-Key header on every request
+  -->
+  <vocal-twist
+    language="en"
+    transcribe-url="/api/transcribe"
+    speak-url="/api/speak"
+  ></vocal-twist>
+
+  <!-- Ambient version — uncomment to enable: -->
+  <!--
+  <vocal-twist language="en" ambient></vocal-twist>
+  -->
+
+  <h2>Listening to component events</h2>
+  <pre>
+const el = document.querySelector('vocal-twist');
+
+// Transcript received from STT
+el.addEventListener('vt:transcript', (e) => {
+  console.log('Transcript:', e.detail.text);
+});
+
+// TTS started playing
+el.addEventListener('vt:speaking', () => {
+  console.log('TTS is speaking');
+});
+
+// State changed (idle / recording / transcribing / speaking / ambient-*)
+el.addEventListener('vt:statechange', (e) => {
+  console.log('State:', e.detail.state);
+});
+
+// Error occurred
+el.addEventListener('vt:error', (e) => {
+  console.error('Error:', e.detail.error);
+});
+
+// Access the underlying VocalTwist API directly
+el.vocalTwist.speak('Hello from the programmatic API!');
+el.vocalTwist.setLanguage('fr');
+  </pre>
+
+  <div id="wc-log" class="log"><p><em>Events will appear here…</em></p></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     EXAMPLE 2 — Imperative JavaScript API
+     Full control without the custom element.
+     ─────────────────────────────────────────────────────────────────────── -->
+<div class="demo-card">
+  <h2>Example 2 — Imperative API</h2>
+  <p>
+    Use <code>VocalTwist</code> directly when you need full control
+    over UI and lifecycle — e.g. in a React/Vue/Angular component.
+  </p>
+
+  <pre>
+const vt = new VocalTwist({
+  transcribeUrl : '/api/transcribe',
+  speakUrl      : '/api/speak',
+  ambientUrl    : '/api/transcribe-ambient',
+  language      : 'en',
+  voice         : 'alloy',           // optional TTS voice
+  apiKey        : 'sk-...',          // optional — X-API-Key header
+  silenceMs     : 15000,             // ambient: flush after 15 s silence
+  maxBufferMs   : 30000,             // ambient: hard flush every 30 s
+
+  onTranscript  : (text, displayText) => console.log(text),
+  onStateChange : (state) => updateMyUI(state),
+  onSpeechStart : () => { /* user started speaking → interrupt TTS */ },
+  onError       : (err) => console.error(err),
+  onTTSStart    : () => console.log('TTS playing'),
+  onTTSEnd      : () => console.log('TTS done'),
+});
+  </pre>
+
+  <div class="controls">
+    <button class="action primary" id="btn-start-rec">▶ Hold to Record</button>
+    <button class="action" id="btn-stop-rec"  disabled>⏹ Stop &amp; Transcribe</button>
+    <button class="action" id="btn-ambient">🎙 Start Ambient</button>
+    <button class="action" id="btn-stop-ambient" disabled>⏹ Stop Ambient</button>
+  </div>
+
+  <label>
+    Speak TTS text:
+    <input type="text" id="tts-input" placeholder="Enter text and click Speak" value="Hello! VocalTwist is working." />
+  </label>
+  <div class="controls" style="margin-top: 0.5rem">
+    <button class="action primary" id="btn-speak">🔊 Speak</button>
+    <button class="action" id="btn-lang-fr">🌐 Switch to French</button>
+    <button class="action" id="btn-lang-en">🌐 Switch to English</button>
+    <button class="action" id="btn-destroy">🗑 Destroy</button>
+  </div>
+
+  <div id="api-log" class="log"><p><em>Events will appear here…</em></p></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     SCRIPTS — load order matters:
+       1. onnxruntime-web  (required by vad-web for ONNX inference)
+       2. vad-web          (sets window.vad — used by AmbientVAD)
+       3. ambient-vad.js   (sets window.AmbientVAD)
+       4. vocal-twist.js   (sets window.VocalTwist + registers <vocal-twist>)
+     ─────────────────────────────────────────────────────────────────────── -->
+
+<!-- 1. ONNX Runtime Web — required by vad-web for in-browser VAD inference -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/ort.min.js"></script>
+
+<!-- 2. VAD Web — Silero VAD running fully in-browser -->
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.7/dist/bundle.min.js"></script>
+
+<!-- 3. AmbientVAD — portable always-on listening module -->
+<script src="ambient-vad.js"></script>
+
+<!-- 4. VocalTwist — main library + <vocal-twist> custom element -->
+<link  rel="stylesheet" href="vocal-twist.css" />
+<script src="vocal-twist.js"></script>
+
+<script>
+// ── Web Component event wiring (Example 1) ────────────────────────────────────
+(function () {
+  const el  = document.querySelector('vocal-twist');
+  const log = document.getElementById('wc-log');
+
+  function addLog(msg) {
+    const p = document.createElement('p');
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    if (log.firstChild?.tagName === 'P' && log.firstChild.querySelector('em')) {
+      log.innerHTML = '';
+    }
+    log.prepend(p);
+  }
+
+  el?.addEventListener('vt:transcript',  (e) => addLog(`Transcript: "${e.detail.text}"`));
+  el?.addEventListener('vt:speaking',    ()  => addLog('TTS speaking'));
+  el?.addEventListener('vt:statechange', (e) => addLog(`State → ${e.detail.state}`));
+  el?.addEventListener('vt:error',       (e) => addLog(`Error: ${e.detail.error?.message}`));
+})();
+
+// ── Imperative API (Example 2) ────────────────────────────────────────────────
+(function () {
+  const log = document.getElementById('api-log');
+
+  function addLog(msg) {
+    const p = document.createElement('p');
+    p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    if (log.firstChild?.tagName === 'P' && log.firstChild.querySelector('em')) {
+      log.innerHTML = '';
+    }
+    log.prepend(p);
+  }
+
+  let vt = null;
+
+  function ensureVT() {
+    if (vt) return vt;
+    vt = new VocalTwist({
+      transcribeUrl : '/api/transcribe',
+      speakUrl      : '/api/speak',
+      ambientUrl    : '/api/transcribe-ambient',
+      language      : 'en',
+      onTranscript  : (text) => addLog(`Transcript: "${text}"`),
+      onStateChange : (s)    => addLog(`State → ${s}`),
+      onError       : (err)  => addLog(`Error: ${err.message}`),
+      onTTSStart    : ()     => addLog('TTS started'),
+      onTTSEnd      : ()     => addLog('TTS ended'),
+      onSpeechStart : ()     => addLog('Speech start detected'),
+    });
+    return vt;
+  }
+
+  const btnStart       = document.getElementById('btn-start-rec');
+  const btnStop        = document.getElementById('btn-stop-rec');
+  const btnAmbient     = document.getElementById('btn-ambient');
+  const btnStopAmbient = document.getElementById('btn-stop-ambient');
+  const btnSpeak       = document.getElementById('btn-speak');
+  const btnLangFr      = document.getElementById('btn-lang-fr');
+  const btnLangEn      = document.getElementById('btn-lang-en');
+  const btnDestroy     = document.getElementById('btn-destroy');
+  const ttsInput       = document.getElementById('tts-input');
+
+  // Push-to-talk: hold button → record; release → transcribe
+  btnStart.addEventListener('pointerdown', async () => {
+    const inst = ensureVT();
+    btnStart.disabled = true;
+    btnStop.disabled  = false;
+    await inst.startRecording();
+  });
+
+  btnStop.addEventListener('click', async () => {
+    if (!vt) return;
+    btnStop.disabled  = true;
+    btnStart.disabled = false;
+    await vt.stopRecording();
+  });
+
+  btnAmbient.addEventListener('click', async () => {
+    const inst = ensureVT();
+    try {
+      await inst.startAmbient();
+      btnAmbient.disabled     = true;
+      btnStopAmbient.disabled = false;
+      addLog('Ambient mode started');
+    } catch (err) {
+      addLog(`Ambient start failed: ${err.message}`);
+    }
+  });
+
+  btnStopAmbient.addEventListener('click', () => {
+    vt?.stopAmbient();
+    btnAmbient.disabled     = false;
+    btnStopAmbient.disabled = true;
+    addLog('Ambient mode stopped');
+  });
+
+  btnSpeak.addEventListener('click', async () => {
+    const text = ttsInput.value.trim();
+    if (!text) return;
+    try {
+      await ensureVT().speak(text);
+    } catch (err) {
+      addLog(`Speak failed: ${err.message}`);
+    }
+  });
+
+  btnLangFr.addEventListener('click', () => {
+    ensureVT().setLanguage('fr');
+    addLog('Language → fr');
+  });
+
+  btnLangEn.addEventListener('click', () => {
+    ensureVT().setLanguage('en');
+    addLog('Language → en');
+  });
+
+  btnDestroy.addEventListener('click', () => {
+    vt?.destroy();
+    vt = null;
+    btnStart.disabled       = false;
+    btnStop.disabled        = true;
+    btnAmbient.disabled     = false;
+    btnStopAmbient.disabled = true;
+    addLog('VocalTwist destroyed — will re-create on next action');
+  });
+})();
+</script>
+</body>
+</html>

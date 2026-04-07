@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  vocaltwist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: vocaltwist:latest
+    container_name: vocaltwist
+    ports:
+      - "8000:8000"
+    environment:
+      # STT
+      - VOCALTWIST_STT_PROVIDER=whisper
+      - VOCALTWIST_WHISPER_MODEL=base
+      - VOCALTWIST_WHISPER_DEVICE=cpu
+      - VOCALTWIST_WHISPER_COMPUTE_TYPE=int8
+      # Logging
+      - VOCALTWIST_LOG_FORMAT=json
+      - VOCALTWIST_LOG_LEVEL=INFO
+      # LM Studio — host.docker.internal resolves to the host machine on
+      # Docker Desktop (macOS, Windows). On Linux add:
+      #   extra_hosts: ["host.docker.internal:host-gateway"]
+      - LM_STUDIO_URL=http://host.docker.internal:1234/v1/chat/completions
+      - LM_STUDIO_MODEL=mistralai/ministral-3-3b
+    volumes:
+      # Mount a local logs directory for persistence
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import httpx; r=httpx.get('http://localhost:8000/api/health',timeout=5); r.raise_for_status()"
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  # Uncomment to add a GPU-accelerated whisper variant
+  # vocaltwist-gpu:
+  #   extends:
+  #     service: vocaltwist
+  #   environment:
+  #     - VOCALTWIST_WHISPER_DEVICE=cuda
+  #     - VOCALTWIST_WHISPER_COMPUTE_TYPE=float16
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             count: 1
+  #             capabilities: [gpu]
+
+volumes:
+  logs:
