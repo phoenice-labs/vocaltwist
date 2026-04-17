@@ -40,7 +40,7 @@ class VocalTwistSTTProvider {
       headers['X-Api-Key'] = this._apiKey;
     }
 
-    const res = await fetch(`${this._backendUrl}/transcribe`, {
+    const res = await fetch(`${this._backendUrl}/api/transcribe`, {
       method: 'POST',
       headers,
       body:   formData,

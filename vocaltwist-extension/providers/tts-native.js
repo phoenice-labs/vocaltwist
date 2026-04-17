@@ -20,16 +20,16 @@ class NativeTTSProvider {
    * @param {Function} [opts.onEnd]   Called when speech completes
    * @param {Function} [opts.onError] Called on error
    */
-  speak(text, { voice, rate, pitch, lang, onEnd, onError } = {}) {
+  speak(text, { voice, rate, pitch, language, onEnd, onError } = {}) {
     this.stop();
 
     const utterance        = new SpeechSynthesisUtterance(text);
     utterance.rate         = rate  ?? 1.0;
     utterance.pitch        = pitch ?? 1.0;
-    if (lang) utterance.lang = lang;
+    if (language) utterance.lang = language;
 
     // Select voice
-    const selectedVoice = this.#selectVoice(voice, lang);
+    const selectedVoice = this.#selectVoice(voice, language);
     if (selectedVoice) utterance.voice = selectedVoice;
 
     utterance.onend   = () => onEnd?.();
@@ -52,7 +52,7 @@ class NativeTTSProvider {
    * @param {string} [lang]            BCP-47 fallback filter
    * @returns {SpeechSynthesisVoice|null}
    */
-  #selectVoice(voiceNameOrUri, lang) {
+  #selectVoice(voiceNameOrUri, language) {
     const voices = speechSynthesis.getVoices();
     if (!voices.length) return null;
 
@@ -67,8 +67,8 @@ class NativeTTSProvider {
       if (partial) return partial;
     }
 
-    if (lang) {
-      const langMatch = voices.find((v) => v.lang.startsWith(lang.split('-')[0]));
+    if (language) {
+      const langMatch = voices.find((v) => v.lang.startsWith(language.split('-')[0]));
       if (langMatch) return langMatch;
     }
 

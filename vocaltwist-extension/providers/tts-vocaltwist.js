@@ -38,7 +38,7 @@ class VocalTwistTTSProvider {
 
     let res;
     try {
-      res = await fetch(`${this._backendUrl}/speak`, {
+      res = await fetch(`${this._backendUrl}/api/speak`, {
         method:  'POST',
         headers,
         body:    JSON.stringify({ text, voice, language, rate }),
