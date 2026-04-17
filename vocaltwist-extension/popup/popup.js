@@ -195,10 +195,12 @@ saveBtn.addEventListener('click', async () => {
     customSelectors,
   };
 
-  await chrome.runtime.sendMessage({
-    type:     'SETTINGS_UPDATED',
-    settings: newSettings,
-  });
+  // Save directly to storage (reliable — no service worker round-trip)
+  await new Promise((resolve) => chrome.storage.sync.set(newSettings, resolve));
+
+  // Notify background to update its in-memory state and broadcast to tabs
+  // Fire-and-forget — don't await; save is already done above
+  chrome.runtime.sendMessage({ type: 'SETTINGS_UPDATED', settings: newSettings }).catch(() => {});
 
   saveBtn.textContent = '✅ Saved';
   setTimeout(() => {

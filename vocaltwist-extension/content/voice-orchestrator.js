@@ -19,6 +19,11 @@ const voiceOrchestrator = (() => {
   let _isSpeaking    = false;
   let _isRecording   = false;
 
+  // Tracks input field state at recording start so interim transcripts
+  // replace rather than append (prevents "hello hello there hello there" duplication)
+  let _recordingBaseValue = '';
+  let _recordingBaseInput = null;
+
   // ─── Provider factory ─────────────────────────────────────────────────────────
 
   function buildSTT(backendOnline, settings) {
@@ -35,11 +40,44 @@ const voiceOrchestrator = (() => {
     return new (window.__vtNativeTTS)();
   }
 
+  // ─── Transcript injection (replace-aware) ─────────────────────────────────────
+
+  function _injectTranscript(input, transcript) {
+    if (!input || !transcript) return;
+    // Build the full new value: everything before recording started + new transcript
+    const newVal = _recordingBaseValue
+      ? `${_recordingBaseValue} ${transcript}`
+      : transcript;
+
+    if (input.isContentEditable) {
+      // For contenteditable: use injectText which handles React etc.
+      // We can't easily do "replace" so just append for now
+      window.__vtMicButton?.injectText(input, transcript);
+    } else {
+      const proto  = input.tagName === 'TEXTAREA'
+        ? window.HTMLTextAreaElement.prototype
+        : window.HTMLInputElement.prototype;
+      const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+      if (setter) {
+        setter.call(input, newVal);
+      } else {
+        input.value = newVal;
+      }
+      input.dispatchEvent(new Event('input',  { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
   // ─── Recording ────────────────────────────────────────────────────────────────
 
   async function startRecording() {
     if (_isRecording) return;
     stopSpeaking(); // Cancel any active TTS before recording
+
+    // Snapshot input value so interim results replace rather than append
+    const currentInput    = window.__vtFocusWatcher?.currentInput();
+    _recordingBaseInput   = currentInput;
+    _recordingBaseValue   = currentInput?.value || '';
 
     _isRecording = true;
     window.__vtMicButton?.setState('recording');
@@ -51,17 +89,21 @@ const voiceOrchestrator = (() => {
         _settings.language,
         (transcript, isFinal) => {
           if (transcript) {
-            const input = window.__vtFocusWatcher?.currentInput();
+            const input = window.__vtFocusWatcher?.currentInput() || _recordingBaseInput;
             if (input) {
-              window.__vtMicButton?.injectText(input, transcript);
+              _injectTranscript(input, transcript);
             }
           }
           if (isFinal) {
+            _recordingBaseValue = '';
+            _recordingBaseInput = null;
             _isRecording = false;
             window.__vtMicButton?.setState('idle');
           }
         },
         (errMsg) => {
+          _recordingBaseValue = '';
+          _recordingBaseInput = null;
           _isRecording = false;
           window.__vtMicButton?.setState('error');
           console.warn('[VocalTwist] STT error:', errMsg);
