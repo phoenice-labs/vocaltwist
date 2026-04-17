@@ -127,7 +127,7 @@ function startAmbientVAD(settings, backendOnline) {
   const backendUrl = (settings.backendUrl || DEFAULTS.backendUrl).replace(/\/$/, '');
   chrome.runtime.sendMessage({
     type:          MSG.OFFSCREEN_VAD_START,
-    transcribeUrl: `${backendUrl}/transcribe`,
+    transcribeUrl: `${backendUrl}/api/transcribe`,
     language:      settings.language,
   });
 }

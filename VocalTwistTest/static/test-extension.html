@@ -296,6 +296,80 @@
     <div class="log-line">[VocalTwist] Extension test log ready…</div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LANGUAGE TEST PANEL  — Direct API tests, no extension required
+       Playwright hooks on data-test-* attributes.
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+    .lang-panel {
+      background: #1a202c; color: #e2e8f0;
+      border-top: 3px solid #4a5568;
+      padding: 14px 20px;
+    }
+    .lang-panel h3 {
+      font-size: 13px; font-weight: 700; color: #a0aec0;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .lang-panel h3 .badge-api {
+      background: #2d3748; border: 1px solid #4a5568;
+      border-radius: 4px; padding: 1px 6px; font-size: 10px;
+      color: #68d391; letter-spacing: 0;
+    }
+    .lang-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .lang-row {
+      background: #2d3748; border-radius: 6px;
+      padding: 8px 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .lang-name { font-size: 12px; font-weight: 600; flex: 1; }
+    .lang-native { font-size: 10px; color: #a0aec0; }
+    .lang-btn {
+      background: #4a5568; color: #e2e8f0;
+      border: none; border-radius: 4px;
+      padding: 4px 10px; font-size: 11px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .lang-btn:hover { background: #718096; }
+    .lang-btn.tts { background: #2b4c6a; }
+    .lang-btn.tts:hover { background: #2a69ac; }
+    .lang-btn.stt { background: #276749; }
+    .lang-btn.stt:hover { background: #38a169; }
+    .lang-status {
+      font-size: 10px; min-width: 22px; text-align: center;
+    }
+    .run-all-btn {
+      background: #553c9a; color: #e9d8fd;
+      border: none; border-radius: 6px;
+      padding: 6px 18px; font-size: 12px; cursor: pointer;
+      font-weight: 600; transition: background 0.15s;
+    }
+    .run-all-btn:hover { background: #6b46c1; }
+    .run-all-btn:disabled { background: #4a5568; cursor: default; color: #a0aec0; }
+    #lang-summary {
+      margin-top: 8px; font-size: 11px; color: #a0aec0;
+    }
+  </style>
+
+  <div class="lang-panel">
+    <h3>
+      🌐 Language Tests (Direct API — no extension required)
+      <span class="badge-api">POST /api/speak · POST /api/transcribe</span>
+    </h3>
+    <div class="lang-grid" id="lang-grid">
+      <!-- rows injected by JS -->
+    </div>
+    <button class="run-all-btn" id="run-all-btn" data-testid="run-all-langs">
+      ▶ Run All Language Tests
+    </button>
+    <div id="lang-summary" data-testid="lang-summary"></div>
+  </div>
+
 <script>
 'use strict';
 
@@ -476,6 +550,158 @@ document.addEventListener('vt:providerChanged', (e) => {
 });
 
 log('Test page ready. Focus the textarea to activate the extension mic button.');
+
+// ─── Language Test Panel ────────────────────────────────────────────────────────
+
+const BACKEND = 'http://localhost:8000';
+
+const LANG_TESTS = [
+  { code: 'en', bcp47: 'en-US', name: 'English',    native: 'English',  text: 'Hello from VocalTwist.' },
+  { code: 'hi', bcp47: 'hi-IN', name: 'Hindi',      native: 'हिन्दी',   text: 'नमस्ते, वोकलट्विस्ट से।' },
+  { code: 'es', bcp47: 'es-ES', name: 'Spanish',    native: 'Español',  text: 'Hola desde VocalTwist.' },
+  { code: 'fr', bcp47: 'fr-FR', name: 'French',     native: 'Français', text: 'Bonjour de VocalTwist.' },
+  { code: 'de', bcp47: 'de-DE', name: 'German',     native: 'Deutsch',  text: 'Hallo von VocalTwist.' },
+  { code: 'zh', bcp47: 'zh-CN', name: 'Chinese',    native: '中文',      text: '你好，来自 VocalTwist。' },
+  { code: 'ja', bcp47: 'ja-JP', name: 'Japanese',   native: '日本語',    text: 'VocalTwist からこんにちは。' },
+  { code: 'pt', bcp47: 'pt-BR', name: 'Portuguese', native: 'Português',text: 'Olá do VocalTwist.' },
+  { code: 'ar', bcp47: 'ar-SA', name: 'Arabic',     native: 'العربية',  text: 'مرحباً من VocalTwist.' },
+];
+
+// Shared test-result store: Playwright reads window.__vtLangResults
+window.__vtLangResults = {};
+
+// ── Build minimal silent WAV blob ──────────────────────────────────────────────
+
+function makeSilentWav(durationSec = 0.3, sampleRate = 16000) {
+  const n = Math.floor(sampleRate * durationSec);
+  const buf = new ArrayBuffer(44 + n * 2);
+  const view = new DataView(buf);
+  const write = (off, str) => { for (let i=0; i<str.length; i++) view.setUint8(off+i, str.charCodeAt(i)); };
+  write(0, 'RIFF'); view.setUint32(4, 36+n*2, true);
+  write(8, 'WAVE'); write(12, 'fmt '); view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true); view.setUint32(28, sampleRate*2, true);
+  view.setUint16(32, 2, true); view.setUint16(34, 16, true);
+  write(36, 'data'); view.setUint32(40, n*2, true);
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+// ── Single-language TTS test ───────────────────────────────────────────────────
+
+async function runTTSTest(lang) {
+  const el = document.querySelector(`[data-test-tts-status="${lang.code}"]`);
+  if (el) el.textContent = '⏳';
+  try {
+    const res = await fetch(`${BACKEND}/api/speak`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ text: lang.text, language: lang.code }),
+      signal:  AbortSignal.timeout(30_000),
+    });
+    const ok      = res.status === 200;
+    const ct      = res.headers.get('content-type') || '';
+    const bytes   = ok ? (await res.arrayBuffer()).byteLength : 0;
+    const result  = { status: res.status, ok, contentType: ct, bytes, error: null };
+    window.__vtLangResults[`tts_${lang.code}`] = result;
+    if (el) el.textContent = ok ? '✅' : `❌${res.status}`;
+    log(`TTS [${lang.code}]: ${ok ? 'OK' : 'FAIL'} — ${res.status} · ${bytes} bytes · ${ct}`,
+        ok ? '' : 'error');
+    return result;
+  } catch (err) {
+    const result = { status: 0, ok: false, contentType: '', bytes: 0, error: err.message };
+    window.__vtLangResults[`tts_${lang.code}`] = result;
+    if (el) el.textContent = '❌';
+    log(`TTS [${lang.code}]: ERROR — ${err.message}`, 'error');
+    return result;
+  }
+}
+
+// ── Single-language STT test ───────────────────────────────────────────────────
+
+async function runSTTTest(lang) {
+  const el = document.querySelector(`[data-test-stt-status="${lang.code}"]`);
+  if (el) el.textContent = '⏳';
+  try {
+    const url = new URL(`${BACKEND}/api/transcribe`);
+    url.searchParams.set('language', lang.code);
+    const fd = new FormData();
+    fd.append('audio', makeSilentWav(), 'audio.wav');
+    const res = await fetch(url.toString(), {
+      method: 'POST',
+      body:   fd,
+      signal: AbortSignal.timeout(120_000),
+    });
+    const ok = res.status === 200;
+    let body = {};
+    if (ok) { try { body = await res.json(); } catch (_) {} }
+    const result = { status: res.status, ok, text: body.text ?? '', langSent: lang.code, error: null };
+    window.__vtLangResults[`stt_${lang.code}`] = result;
+    if (el) el.textContent = ok ? '✅' : `❌${res.status}`;
+    log(`STT [${lang.code}]: ${ok ? 'OK' : 'FAIL'} — ${res.status} · transcript: "${body.text ?? ''}"`,
+        ok ? '' : 'error');
+    return result;
+  } catch (err) {
+    const result = { status: 0, ok: false, text: '', langSent: lang.code, error: err.message };
+    window.__vtLangResults[`stt_${lang.code}`] = result;
+    if (el) el.textContent = '❌';
+    log(`STT [${lang.code}]: ERROR — ${err.message}`, 'error');
+    return result;
+  }
+}
+
+// ── Build language grid ────────────────────────────────────────────────────────
+
+const grid = document.getElementById('lang-grid');
+for (const lang of LANG_TESTS) {
+  const row = document.createElement('div');
+  row.className = 'lang-row';
+  row.innerHTML = `
+    <div>
+      <div class="lang-name">${lang.name}</div>
+      <div class="lang-native">${lang.native} · <code>${lang.bcp47}</code></div>
+    </div>
+    <button class="lang-btn tts" data-test-tts="${lang.bcp47}" title="Test TTS">🔊 TTS</button>
+    <span class="lang-status" data-test-tts-status="${lang.code}">○</span>
+    <button class="lang-btn stt" data-test-stt="${lang.bcp47}" title="Test STT">🎤 STT</button>
+    <span class="lang-status" data-test-stt-status="${lang.code}">○</span>
+  `;
+  grid.appendChild(row);
+
+  row.querySelector(`[data-test-tts="${lang.bcp47}"]`)
+     .addEventListener('click', () => runTTSTest(lang));
+  row.querySelector(`[data-test-stt="${lang.bcp47}"]`)
+     .addEventListener('click', () => runSTTTest(lang));
+}
+
+// ── Run-all button ─────────────────────────────────────────────────────────────
+
+document.getElementById('run-all-btn').addEventListener('click', async function () {
+  this.disabled = true;
+  this.textContent = '⏳ Running…';
+  const summary = document.getElementById('lang-summary');
+  summary.textContent = 'Testing all languages…';
+
+  let ttsPass = 0, ttsFail = 0, sttPass = 0, sttFail = 0;
+  for (const lang of LANG_TESTS) {
+    const tr = await runTTSTest(lang);
+    if (tr.ok) ttsPass++; else ttsFail++;
+    // brief pause between STT calls to stay under 20/min rate limit
+    await new Promise(r => setTimeout(r, 3000));
+    const sr = await runSTTTest(lang);
+    if (sr.ok) sttPass++; else sttFail++;
+    await new Promise(r => setTimeout(r, 3100));
+  }
+
+  const allOk = ttsFail === 0 && sttFail === 0;
+  summary.textContent =
+    `TTS: ${ttsPass}/${LANG_TESTS.length} ✅  ${ttsFail ? ttsFail+'❌ ' : ''}· ` +
+    `STT: ${sttPass}/${LANG_TESTS.length} ✅  ${sttFail ? sttFail+'❌' : ''}` +
+    (allOk ? '  — ALL PASS 🎉' : '  — SOME FAILURES ⚠️');
+  window.__vtLangAllDone = true;
+
+  this.textContent = '▶ Run All Language Tests';
+  this.disabled = false;
+});
 </script>
 </body>
 </html>
