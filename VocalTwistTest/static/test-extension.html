@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocalTwist Extension Test Page</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f0f4f8;
+      --surface: #ffffff;
+      --border: #dde3ec;
+      --accent: #3182ce;
+      --user-bg: #ebf8ff;
+      --ai-bg: #ffffff;
+      --text: #1a202c;
+      --text-dim: #718096;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--accent);
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 17px; font-weight: 700; }
+    header .badge {
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #backend-status {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    #backend-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+    }
+    #backend-dot.online  { background: #68d391; box-shadow: 0 0 6px #68d391; }
+    #backend-dot.offline { background: #bee3f8; }
+
+    /* ── Info banner ── */
+    .info-banner {
+      background: #ebf8ff;
+      border-bottom: 1px solid #bee3f8;
+      padding: 8px 20px;
+      font-size: 12px;
+      color: #2b6cb0;
+      flex-shrink: 0;
+    }
+    .info-banner strong { font-weight: 700; }
+
+    /* ── Chat area ── */
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 75%;
+      animation: msg-in 0.2s ease;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .message.user      { align-self: flex-end; flex-direction: row-reverse; }
+    .message.assistant { align-self: flex-start; }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      background: #e2e8f0;
+    }
+    .message.user .avatar      { background: var(--accent); color: white; }
+    .message.assistant .avatar { background: #553c9a; color: white; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .message.user .bubble {
+      background: var(--user-bg);
+      border: 1px solid #bee3f8;
+      border-radius: var(--radius) 2px var(--radius) var(--radius);
+    }
+    /* ⚠️ KEY: The extension's response-watcher looks for AI response nodes.
+       This class + data attribute helps the heuristic detector, and
+       also matches any site-registry entry for localhost. */
+    .message.assistant .bubble {
+      background: var(--ai-bg);
+      border: 1px solid var(--border);
+      border-radius: 2px var(--radius) var(--radius) var(--radius);
+    }
+
+    /* Streaming cursor */
+    .streaming-cursor::after {
+      content: '▌';
+      animation: blink 0.7s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .thinking { font-style: italic; color: var(--text-dim); font-size: 13px; }
+
+    /* ── Input area ── */
+    .input-area {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 14px 20px;
+      flex-shrink: 0;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    /* ⚠️ KEY: This is the textarea the extension will attach the mic button to.
+       data-testid is used by Playwright tests. */
+    #user-input {
+      flex: 1;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      max-height: 120px;
+      transition: border-color 0.15s;
+      background: #fafbfc;
+    }
+    #user-input:focus { border-color: var(--accent); background: white; }
+
+    #send-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      width: 44px; height: 44px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+    #send-btn:hover   { background: #2b6cb0; }
+    #send-btn:active  { transform: scale(0.93); }
+    #send-btn:disabled { background: #a0aec0; cursor: default; }
+
+    /* ── Status log (for extension testing) ── */
+    #ext-log {
+      background: #1a202c;
+      color: #68d391;
+      padding: 8px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      max-height: 80px;
+      overflow-y: auto;
+      flex-shrink: 0;
+      border-top: 2px solid #2d3748;
+    }
+    #ext-log .log-line { padding: 1px 0; }
+    #ext-log .log-line.warn  { color: #fbd38d; }
+    #ext-log .log-line.error { color: #fc8181; }
+
+    /* ── Mock stream controls ── */
+    .dev-controls {
+      background: #2d3748;
+      color: #a0aec0;
+      padding: 6px 16px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .dev-controls span { color: #718096; }
+    .dev-btn {
+      background: #4a5568;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 10px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .dev-btn:hover { background: #718096; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <span>🎙</span>
+    <h1>VocalTwist Extension Test Page</h1>
+    <span class="badge">No embedded voice</span>
+    <div class="header-right">
+      <div id="backend-status">
+        <div id="backend-dot"></div>
+        <span id="backend-label">Checking backend…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Info banner -->
+  <div class="info-banner">
+    <strong>Extension test harness.</strong>
+    This page has NO embedded VocalTwist — all voice I/O is handled by the browser extension.
+    Click the textarea below and look for the 🎙 mic button from the extension.
+  </div>
+
+  <!-- Chat messages -->
+  <div id="chat-messages" data-testid="chat-messages">
+    <div class="message assistant" data-testid="welcome-msg">
+      <div class="avatar">🤖</div>
+      <div class="bubble" data-testid="ai-response">
+        Hello! I'm a test chatbot. Click the textarea below, look for the 🎙 mic button
+        added by the <strong>VocalTwist extension</strong>, then speak or type a message.
+        I'll reply and the extension should read my response aloud.
+      </div>
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="input-area">
+    <div class="input-row">
+      <!-- ⚠️ The extension attaches its mic button here -->
+      <textarea
+        id="user-input"
+        data-testid="user-input"
+        placeholder="Click here and use the 🎙 mic button, or type your message…"
+        rows="2"
+      ></textarea>
+      <button id="send-btn" data-testid="send-btn" title="Send message">➤</button>
+    </div>
+  </div>
+
+  <!-- Dev controls -->
+  <div class="dev-controls">
+    <span>Dev tools:</span>
+    <button class="dev-btn" id="btn-trigger-response" data-testid="btn-trigger-response">
+      Inject AI response
+    </button>
+    <button class="dev-btn" id="btn-stream-response" data-testid="btn-stream-response">
+      Stream AI response
+    </button>
+    <button class="dev-btn" id="btn-clear" data-testid="btn-clear">
+      Clear chat
+    </button>
+    <span style="margin-left:auto">
+      Press <kbd style="background:#4a5568;border:1px solid #718096;padding:1px 5px;border-radius:3px">Ctrl+Shift+V</kbd> to toggle mic
+    </span>
+  </div>
+
+  <!-- Extension event log -->
+  <div id="ext-log" data-testid="ext-log">
+    <div class="log-line">[VocalTwist] Extension test log ready…</div>
+  </div>
+
+<script>
+'use strict';
+
+// ─── Extension event log ───────────────────────────────────────────────────────
+
+const extLog = document.getElementById('ext-log');
+function log(msg, level = '') {
+  const line = document.createElement('div');
+  line.className = `log-line ${level}`;
+  line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  extLog.appendChild(line);
+  extLog.scrollTop = extLog.scrollHeight;
+}
+
+// ─── Backend health check ──────────────────────────────────────────────────────
+
+const backendDot   = document.getElementById('backend-dot');
+const backendLabel = document.getElementById('backend-label');
+
+async function checkBackend() {
+  try {
+    const res = await fetch('http://localhost:8000/health', { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      backendDot.className   = 'online';
+      backendLabel.textContent = '🟢 VocalTwist backend online';
+      log('Backend online at localhost:8000 — Whisper STT + Neural TTS active');
+      return true;
+    }
+  } catch (_) {}
+  backendDot.className   = 'offline';
+  backendLabel.textContent = '🔵 Browser built-in mode';
+  return false;
+}
+
+checkBackend();
+setInterval(checkBackend, 30_000);
+
+// ─── Chat logic ────────────────────────────────────────────────────────────────
+
+const messagesEl = document.getElementById('chat-messages');
+const inputEl    = document.getElementById('user-input');
+const sendBtn    = document.getElementById('send-btn');
+
+// Canned AI responses for testing TTS
+const CANNED_RESPONSES = [
+  "I received your message. The VocalTwist extension should now read this response aloud using text-to-speech. If you hear this, the voice output is working correctly.",
+  "Great, the speech recognition captured your input! This response demonstrates the full voice loop — you spoke, the extension transcribed, and now I'm responding. The extension should speak this text.",
+  "Voice input confirmed. Your message was successfully injected into the text field by the VocalTwist extension. This is the AI response that will be read back to you.",
+  "The extension is working well. Whisper transcription is accurate and Edge Neural TTS will read this response in a natural voice when VocalTwist backend is running.",
+  "Testing complete. Both voice input and voice output are functioning. The extension seamlessly connects your browser to the local VocalTwist backend for privacy-preserving voice interaction.",
+];
+
+let responseIndex = 0;
+
+function addMessage(role, text, streaming = false) {
+  const msgEl    = document.createElement('div');
+  msgEl.className = `message ${role}`;
+  msgEl.setAttribute('data-testid', `msg-${role}`);
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '👤' : '🤖';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.setAttribute('data-testid', 'ai-response');
+  if (streaming) bubble.classList.add('streaming-cursor');
+  bubble.textContent = text;
+
+  msgEl.appendChild(avatar);
+  msgEl.appendChild(bubble);
+  messagesEl.appendChild(msgEl);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  return bubble;
+}
+
+function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  addMessage('user', text);
+  inputEl.value = '';
+  inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+  sendBtn.disabled = true;
+  log(`User message sent: "${text.substring(0, 60)}…"`);
+
+  // Add thinking indicator
+  const thinkEl = document.createElement('div');
+  thinkEl.className = 'message assistant';
+  thinkEl.innerHTML = '<div class="avatar">🤖</div><div class="bubble thinking">Thinking…</div>';
+  messagesEl.appendChild(thinkEl);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  // Simulate AI response after short delay
+  setTimeout(() => {
+    thinkEl.remove();
+    streamResponse(CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
+    responseIndex++;
+    sendBtn.disabled = false;
+  }, 800 + Math.random() * 600);
+}
+
+/**
+ * Simulate streaming AI response token by token.
+ * The extension's response-watcher should detect this and trigger TTS
+ * after 1.5s of no changes (streaming settled).
+ */
+function streamResponse(fullText) {
+  const bubble = addMessage('assistant', '', true);
+  log('AI response streaming started…');
+
+  const words  = fullText.split(' ');
+  let   idx    = 0;
+
+  const timer = setInterval(() => {
+    if (idx < words.length) {
+      bubble.textContent = words.slice(0, idx + 1).join(' ');
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      idx++;
+    } else {
+      clearInterval(timer);
+      bubble.classList.remove('streaming-cursor');
+      log('AI response streaming complete — extension TTS should trigger now');
+    }
+  }, 60);
+}
+
+// ─── Event wiring ──────────────────────────────────────────────────────────────
+
+sendBtn.addEventListener('click', sendMessage);
+
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Dev buttons
+document.getElementById('btn-trigger-response').addEventListener('click', () => {
+  addMessage('assistant', CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
+  log('Injected instant AI response (no streaming)');
+  responseIndex++;
+});
+
+document.getElementById('btn-stream-response').addEventListener('click', () => {
+  streamResponse(CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
+  responseIndex++;
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  messagesEl.innerHTML = '';
+  log('Chat cleared');
+});
+
+// ─── Observer: detect when extension injects TTS controls ─────────────────────
+
+const observer = new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    for (const node of m.addedNodes) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.classList?.contains('vt-tts-controls')) {
+          log('✅ Extension injected TTS controls — voice output wired!');
+        }
+        if (node.id === 'vt-mic-button') {
+          log('✅ Extension mic button detected in DOM');
+        }
+      }
+    }
+  }
+});
+observer.observe(document.body, { childList: true, subtree: true });
+
+// ─── Listen for extension events (if extension posts messages) ─────────────────
+
+document.addEventListener('vt:providerChanged', (e) => {
+  log(`Provider changed → backend: ${e.detail?.backend}`);
+});
+
+log('Test page ready. Focus the textarea to activate the extension mic button.');
+</script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "chat.openai.com": {
+    "responseSelector": "[data-message-author-role='assistant'] .markdown",
+    "streamingIndicator": "[data-testid='stop-button']",
+    "inputSelector": "#prompt-textarea"
+  },
+  "chatgpt.com": {
+    "responseSelector": "[data-message-author-role='assistant'] .markdown",
+    "streamingIndicator": "[data-testid='stop-button']",
+    "inputSelector": "#prompt-textarea"
+  },
+  "claude.ai": {
+    "responseSelector": "[data-is-streaming='false'] .font-claude-message",
+    "streamingIndicator": "button[aria-label='Stop Response']",
+    "inputSelector": "[contenteditable='true'].ProseMirror"
+  },
+  "gemini.google.com": {
+    "responseSelector": "model-response .response-content",
+    "streamingIndicator": null,
+    "inputSelector": ".ql-editor"
+  },
+  "perplexity.ai": {
+    "responseSelector": ".prose",
+    "streamingIndicator": null,
+    "inputSelector": "textarea"
+  },
+  "copilot.microsoft.com": {
+    "responseSelector": "[data-content='ai-message']",
+    "streamingIndicator": null,
+    "inputSelector": "textarea"
+  },
+  "www.bing.com": {
+    "responseSelector": ".ac-textBlock",
+    "streamingIndicator": null,
+    "inputSelector": "#searchbox"
+  },
+  "you.com": {
+    "responseSelector": ".ai-message-content",
+    "streamingIndicator": null,
+    "inputSelector": "textarea"
+  },
+  "poe.com": {
+    "responseSelector": ".Message_humanMessageBubble__MeSKb + div .Message_botMessageBubble__CPGMI",
+    "streamingIndicator": null,
+    "inputSelector": "textarea"
+  },
+  "character.ai": {
+    "responseSelector": ".swiper-slide-active [data-test-id='chat-message-text']",
+    "streamingIndicator": null,
+    "inputSelector": "textarea"
+  }
+}

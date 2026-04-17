@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="UTF Contract Report" tests="40" failures="0" errors="0" time="0">
+  <testsuite name="contract_suite" tests="40" failures="0" errors="0" timestamp="2026-04-15T22:35:10">
+    <testcase name="TC-001" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-002" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-003" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-004" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-005" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-006" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-007" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-008" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-009" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-010" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-011" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-012" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-013" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-014" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-015" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-016" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-017" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-018" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-019" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-020" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-021" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-022" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-023" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-024" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-025" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-026" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-027" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-028" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-029" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-030" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-031" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-032" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-033" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-034" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-035" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-036" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-037" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-038" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-039" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+    <testcase name="TC-040" classname="utf.contract" time="32.250">
+      <properties>
+        <property name="utf.contract_score" value="100.0000"/>
+        <property name="utf.blocked" value="false"/>
+        <property name="utf.section.test_id" value="10.0000"/>
+        <property name="utf.section.why_generated" value="10.0000"/>
+        <property name="utf.section.requirement_mapping" value="15.0000"/>
+        <property name="utf.section.how_it_exercises" value="20.0000"/>
+        <property name="utf.section.coverage_contribution" value="15.0000"/>
+        <property name="utf.section.expected_outcome" value="15.0000"/>
+        <property name="utf.section.gaps_missing" value="10.0000"/>
+        <property name="utf.section.meaningfulness_check" value="5.0000"/>
+        <property name="utf.exec_status" value="PASSED"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>

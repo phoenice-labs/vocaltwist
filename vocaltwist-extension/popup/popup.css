@@ -1,0 +1,229 @@
+/* popup/popup.css — VocalTwist Extension Popup Styles */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  background: #fff;
+  color: #2d3748;
+  width: 320px;
+  min-height: 200px;
+}
+
+.popup-container {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+  background: linear-gradient(135deg, #2b6cb0, #3182ce);
+  color: white;
+}
+
+.popup-logo {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Toggle switch ── */
+.toggle-switch { cursor: pointer; display: flex; align-items: center; }
+.toggle-switch input { display: none; }
+.toggle-track {
+  width: 36px; height: 20px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 20px;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  top: 2px; left: 2px;
+  transition: left 0.2s;
+}
+.toggle-switch input:checked + .toggle-track { background: rgba(255,255,255,0.7); }
+.toggle-switch input:checked + .toggle-track::after { left: 18px; }
+
+/* ── Status bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #f7fafc;
+  font-size: 12px;
+  color: #4a5568;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #a0aec0;
+  flex-shrink: 0;
+}
+.status-dot.online  { background: #48bb78; }
+.status-dot.offline { background: #3182ce; }
+.status-dot.error   { background: #e53e3e; }
+
+/* ── Sections ── */
+.section {
+  padding: 10px 14px;
+}
+
+.section.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 0;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #718096;
+  margin-bottom: 7px;
+}
+
+/* ── Radio ── */
+.radio-group { display: flex; gap: 16px; flex-wrap: wrap; }
+.radio-option {
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer; font-size: 13px;
+}
+.radio-option input { accent-color: #3182ce; }
+.radio-option em { font-size: 11px; color: #718096; font-style: normal; }
+
+/* ── Checkbox ── */
+.checkbox-option {
+  display: flex; align-items: center; gap: 7px;
+  cursor: pointer; font-size: 13px;
+  padding: 3px 0;
+}
+.checkbox-option input { accent-color: #3182ce; width: 14px; height: 14px; }
+
+/* ── Selects & Inputs ── */
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #718096;
+  margin-bottom: 4px;
+}
+
+.select-field, .text-field {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  font-size: 12px;
+  background: #fff;
+  color: #2d3748;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.select-field:focus, .text-field:focus {
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49,130,206,0.15);
+}
+
+/* ── Advanced section ── */
+.advanced-section {
+  border-top: 1px solid #e2e8f0;
+}
+.advanced-toggle {
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.advanced-toggle::-webkit-details-marker { display: none; }
+.advanced-body {
+  padding: 8px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f7fafc;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 4px; }
+
+.range-field {
+  width: 100%;
+  accent-color: #3182ce;
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #2b6cb0; }
+
+.btn-secondary {
+  background: #edf2f7;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  width: fit-content;
+}
+.btn-secondary:hover { background: #e2e8f0; }
+
+.test-result {
+  font-size: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* ── Footer ── */
+.popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.shortcut-hint { font-size: 11px; color: #718096; }
+kbd {
+  background: #edf2f7;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #2d3748;
+}

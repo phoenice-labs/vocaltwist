@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to VocalTwist</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f7fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #2d3748;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      max-width: 560px;
+      width: 100%;
+      padding: 40px;
+    }
+    .hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .hero-icon { font-size: 56px; margin-bottom: 12px; }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #718096;
+      line-height: 1.5;
+    }
+    .modes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 28px 0;
+    }
+    .mode-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+    .mode-card.highlight { border-color: #3182ce; background: #ebf8ff; }
+    .mode-icon { font-size: 32px; margin-bottom: 10px; }
+    .mode-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+    .mode-desc { font-size: 13px; color: #718096; line-height: 1.4; }
+    .steps {
+      background: #f7fafc;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+    .steps h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #4a5568; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .step-num {
+      min-width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #3182ce;
+      color: white;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shortcut {
+      background: #edf2f7;
+      border: 1px solid #cbd5e0;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .cta {
+      text-align: center;
+    }
+    .btn-start {
+      background: #3182ce;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-start:hover { background: #2b6cb0; }
+    .privacy-note {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 12px;
+      color: #a0aec0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="hero">
+      <div class="hero-icon">🎙</div>
+      <h1>Welcome to VocalTwist</h1>
+      <p class="subtitle">Self-hosted voice I/O for any web app.<br/>Speak into any text field. Hear AI responses. Zero cloud.</p>
+    </div>
+
+    <div class="modes">
+      <div class="mode-card">
+        <div class="mode-icon">🔵</div>
+        <div class="mode-title">Browser Built-in</div>
+        <div class="mode-desc">Works immediately — no setup. Uses browser's Web Speech API.</div>
+      </div>
+      <div class="mode-card highlight">
+        <div class="mode-icon">🟢</div>
+        <div class="mode-title">VocalTwist Server</div>
+        <div class="mode-desc">Whisper accuracy + Neural TTS. Runs 100% locally. Auto-detected.</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <h3>Getting started</h3>
+      <div class="step">
+        <span class="step-num">1</span>
+        <span>Click into any text field on any website.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">2</span>
+        <span>A mic button 🎙 appears near the field — click it or press <span class="shortcut">Ctrl+Shift+V</span>.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">3</span>
+        <span>Speak. Your words are transcribed and inserted automatically.</span>
+      </div>
+      <div class="step">
+        <span class="step-num">4</span>
+        <span><strong>Optional:</strong> Run <a href="https://github.com/yourusername/VocalTwist" target="_blank">VocalTwist</a> locally for Whisper STT + Neural TTS. The extension auto-upgrades.</span>
+      </div>
+    </div>
+
+    <div class="cta">
+      <button class="btn-start" onclick="window.close()">Start using VocalTwist →</button>
+    </div>
+    <p class="privacy-note">
+      🔒 Browser mode uses Google's speech servers. Run VocalTwist locally for true privacy.
+    </p>
+  </div>
+</body>
+</html>

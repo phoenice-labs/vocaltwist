@@ -1,0 +1,14 @@
+{
+  "name": "vocal-twist-e2e",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for the VocalTwist frontend library",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.44.0"
+  }
+}

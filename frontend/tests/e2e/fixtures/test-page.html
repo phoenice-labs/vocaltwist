@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocalTwist E2E Test Fixture</title>
+  <!-- vocal-twist.js is injected by the test via page.addScriptTag() -->
+</head>
+<body>
+  <!--
+    Default element — tests can modify attributes via JavaScript before
+    asserting on the resulting DOM / events.
+  -->
+  <vocal-twist
+    id="vt"
+    transcribe-url="/api/transcribe"
+    speak-url="/api/speak"
+    ambient-url="/api/transcribe-ambient"
+    language="en"
+  ></vocal-twist>
+
+  <div id="transcript-output"></div>
+  <div id="state-output"></div>
+  <div id="error-output"></div>
+</body>
+</html>

@@ -271,6 +271,16 @@ async def chat(request: Request, body: ChatRequest) -> ChatResponse:
 # Serve VocalTwist frontend library files directly so the demo page can load
 # them from the root without bundling.
 
+@app.get("/health", include_in_schema=False)
+async def _health_alias() -> dict[str, str]:
+    """Alias so the extension's background.js probe (GET /health) also works.
+    
+    The VocalTwist backend canonically serves /api/health. This alias lets
+    the Chrome extension probe /health without a full path update.
+    """
+    return {"status": "ok"}
+
+
 @app.get("/favicon.ico", include_in_schema=False)
 async def _favicon() -> FileResponse:
     _ico = os.path.join(_STATIC_DIR, "favicon.ico")

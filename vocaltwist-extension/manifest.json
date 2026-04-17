@@ -1,0 +1,80 @@
+{
+  "manifest_version": 3,
+  "name": "VocalTwist — Local Voice for Any App",
+  "version": "1.0.0",
+  "description": "Self-hosted voice I/O for any web app. Speak into any text field. Hear AI responses. Uses your local Whisper + Edge TTS — no cloud.",
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "offscreen"
+  ],
+
+  "optional_permissions": [
+    "microphone"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "shared/constants.js",
+        "shared/messages.js",
+        "providers/stt-native.js",
+        "providers/stt-vocaltwist.js",
+        "providers/tts-native.js",
+        "providers/tts-vocaltwist.js",
+        "content/focus-watcher.js",
+        "content/mic-button.js",
+        "content/response-watcher.js",
+        "content/voice-orchestrator.js",
+        "content/content.js"
+      ],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+
+  "commands": {
+    "toggle-mic": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+V",
+        "mac": "Command+Shift+V"
+      },
+      "description": "Toggle microphone recording"
+    }
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html", "selectors/site-registry.json"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
