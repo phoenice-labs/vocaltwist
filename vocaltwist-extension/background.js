@@ -17,6 +17,11 @@ import { DEFAULTS, BACKEND_PROBE_INTERVAL_MS, BACKEND_PROBE_TIMEOUT_MS } from '.
 let backendOnline      = false;
 let offscreenActive    = false;
 let recordingTabId     = null;   // Tab that initiated the last START_RECORDING
+// Monotonically-increasing probe generation counter.
+// When a newer probe starts, older in-flight probes see their generation is
+// stale and discard their results — prevents a slow "old-URL" probe from
+// overwriting the result of a faster "new-URL" probe.
+let probeGeneration    = 0;
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
@@ -35,11 +40,13 @@ async function saveSettings(partial) {
 // ─── Backend Health Probe ─────────────────────────────────────────────────────
 
 async function probeBackend() {
+  const myGen = ++probeGeneration;   // Claim a generation slot before any await
   const settings = await getSettings();
   const url      = (settings.backendUrl || DEFAULTS.backendUrl).replace(/\/$/, '');
 
   try {
     const res     = await fetch(`${url}/api/health`, { signal: AbortSignal.timeout(BACKEND_PROBE_TIMEOUT_MS) });
+    if (myGen !== probeGeneration) return;   // A newer probe superseded us — discard
     const wasOnline = backendOnline;
     backendOnline   = res.ok;
     if (wasOnline !== backendOnline) {
@@ -47,6 +54,7 @@ async function probeBackend() {
       updateBadge();
     }
   } catch {
+    if (myGen !== probeGeneration) return;   // A newer probe superseded us — discard
     if (backendOnline) {
       backendOnline = false;
       broadcastToAllTabs({ type: MSG.PROVIDER_CHANGED, backend: false });
@@ -204,6 +212,27 @@ async function handleMessage(message, sender, sendResponse) {
       break;
     }
 
+    case MSG.OFFSCREEN_ERROR: {
+      // Offscreen doc failed (e.g. getUserMedia denied or no recorder active).
+      // Relay the error to the tab that triggered recording so it can reset.
+      console.warn('[VT BG] OFFSCREEN_ERROR:', message.error);
+      updateBadge(false);
+      let targetTabId = recordingTabId;
+      recordingTabId  = null;
+      if (!targetTabId) {
+        const tabs  = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        targetTabId = tabs[0]?.id ?? null;
+      }
+      if (targetTabId) {
+        chrome.tabs.sendMessage(targetTabId, {
+          type:  MSG.OFFSCREEN_ERROR,
+          error: message.error,
+        }).catch(() => {});
+      }
+      sendResponse({ ok: true });
+      break;
+    }
+
     default:
       sendResponse({ ok: false, error: 'Unknown message type' });
   }
@@ -234,6 +263,15 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
 chrome.runtime.onStartup.addListener(() => {
   probeBackend();
+});
+
+// Re-probe immediately when backendUrl changes in storage (e.g. from test fixtures
+// or users typing a new URL in the popup).  This avoids a 30-second wait for the
+// next scheduled probe interval.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && 'backendUrl' in changes) {
+    probeBackend();
+  }
 });
 
 // Run probe immediately and then on interval

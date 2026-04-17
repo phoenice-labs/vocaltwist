@@ -18,6 +18,7 @@ const voiceOrchestrator = (() => {
   let _ttsProvider   = null;
   let _isSpeaking    = false;
   let _isRecording   = false;
+  let _processingTimeout = null;  // Safety timeout for processing state
 
   // Tracks input field state at recording start so interim transcripts
   // replace rather than append (prevents "hello hello there hello there" duplication)
@@ -84,6 +85,11 @@ const voiceOrchestrator = (() => {
 
     // For native STT, drive it entirely in-tab
     if (!_backendOnline) {
+      // Track which provider + language so offline tests can verify via DOM
+      document.documentElement.dataset.vtLastSttProvider = 'native';
+      document.documentElement.dataset.vtLastSttLanguage = _settings?.language || '';
+      document.documentElement.dataset.vtLastSttTs       = Date.now().toString();
+
       const native = _sttProvider;
       native.start(
         _settings.language,
@@ -123,11 +129,23 @@ const voiceOrchestrator = (() => {
     if (!_isRecording) return;
     _isRecording = false;
 
+    // Clear safety timeout — we got a proper stop/audio response
+    if (_processingTimeout) {
+      clearTimeout(_processingTimeout);
+      _processingTimeout = null;
+    }
+
     if (!_backendOnline) {
       _sttProvider?.stop();
       window.__vtMicButton?.setState('idle');
     } else {
       window.__vtMicButton?.setState('processing');
+      // Safety timeout: if OFFSCREEN_AUDIO_READY never arrives, auto-reset
+      _processingTimeout = setTimeout(() => {
+        console.warn('[VocalTwist] Safety timeout: mic reset from processing to idle');
+        window.__vtMicButton?.setState('idle');
+        _processingTimeout = null;
+      }, 15_000);
       chrome.runtime.sendMessage({ type: MSG.STOP_RECORDING });
     }
   }
@@ -234,9 +252,39 @@ const voiceOrchestrator = (() => {
     }
   }
 
+  // ─── Error recovery ───────────────────────────────────────────────────────────
+
+  function handleRecordingError(errMsg) {
+    console.warn('[VocalTwist] Recording error:', errMsg);
+
+    // Clear safety timeout — the error IS our signal
+    if (_processingTimeout) {
+      clearTimeout(_processingTimeout);
+      _processingTimeout = null;
+    }
+
+    _isRecording        = false;
+    _recordingBaseValue = '';
+    _recordingBaseInput = null;
+
+    window.__vtMicButton?.setState('error');
+    setTimeout(() => window.__vtMicButton?.setState('idle'), 3000);
+  }
+
   // ─── Handle audio blob from offscreen ────────────────────────────────────────
 
   async function handleAudioBlob(buffer, mime) {
+    // Clear safety timeout — audio arrived, so we're actively processing
+    if (_processingTimeout) {
+      clearTimeout(_processingTimeout);
+      _processingTimeout = null;
+    }
+
+    // Track provider + language for test observability
+    document.documentElement.dataset.vtLastSttProvider = 'vocaltwist';
+    document.documentElement.dataset.vtLastSttLanguage = _settings?.language || '';
+    document.documentElement.dataset.vtLastSttTs       = Date.now().toString();
+
     try {
       const uint8 = new Uint8Array(buffer);
       const blob  = new Blob([uint8], { type: mime || 'audio/webm' });
@@ -266,6 +314,7 @@ const voiceOrchestrator = (() => {
     stopSpeaking,
     setBackendStatus,
     handleAudioBlob,
+    handleRecordingError,
     get isRecording() { return _isRecording; },
     get isSpeaking()  { return _isSpeaking;  },
     get settings()    { return _settings;    },

@@ -126,7 +126,15 @@ chrome.runtime.onMessage.addListener((message) => {
       break;
 
     case MSG.OFFSCREEN_RECORD_STOP:
-      stopRecording();
+      if (mediaRecorder?.state === 'recording') {
+        stopRecording();
+      } else {
+        // Nothing was recording — send error so content script can reset mic state
+        chrome.runtime.sendMessage({
+          type:  MSG.OFFSCREEN_ERROR,
+          error: 'No active recording to stop',
+        });
+      }
       break;
 
     case MSG.OFFSCREEN_VAD_START:

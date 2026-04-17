@@ -143,12 +143,22 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
 # CDP network interception (which cannot capture extension content-script requests).
 _test_state: dict[str, Any] = {"last_speak": None, "last_transcribe": None, "speak_history": []}
 
+# ── Offline-simulation flag (offline e2e tests) ────────────────────────────────
+# When True, /api/health returns 503 so the extension treats the backend as offline.
+_simulate_offline: bool = False
+
 
 class _TestCaptureMiddleware(BaseHTTPMiddleware):
-    """Lightweight middleware that records language from speak/transcribe calls."""
+    """Lightweight middleware that records language from speak/transcribe calls
+    and simulates backend-offline mode for e2e tests."""
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[override]
         path = request.url.path
+        # Offline simulation: make /api/health return 503 so the extension
+        # treats the backend as unavailable and falls back to native providers.
+        if _simulate_offline and path == "/api/health":
+            from fastapi.responses import JSONResponse as _JR
+            return _JR({"error": "simulated offline"}, status_code=503)
         if request.method == "POST" and path == "/api/speak":
             # request.body() caches the body so the route handler can still read it
             try:
@@ -217,6 +227,19 @@ async def _test_last_transcribe() -> dict:
 async def _test_speak_history() -> list:
     """Return all /api/speak calls captured since last reset."""
     return _test_state.get("speak_history") or []
+
+
+@app.get("/api/test/set-offline", include_in_schema=False)
+async def _test_set_offline(offline: bool = True) -> dict:
+    """Toggle offline simulation — when active /api/health returns 503.
+
+    Used by offline e2e tests to verify the extension falls back to native
+    providers when the backend is unavailable.  Always restore with
+    ?offline=false after the test module completes.
+    """
+    global _simulate_offline
+    _simulate_offline = offline
+    return {"simulate_offline": _simulate_offline}
 
 
 

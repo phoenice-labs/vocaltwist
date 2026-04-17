@@ -82,11 +82,10 @@ async function init() {
     backendOnline = false;
   }
 
-  // If the SW says offline, do a direct probe from the content script.
-  // This covers the race where the SW's initial broadcast was lost.
-  if (!backendOnline) {
-    backendOnline = await checkBackendDirect(settings?.backendUrl);
-  }
+  // Always do an authoritative direct probe from the content script.
+  // The SW's cached value may lag (race with backendUrl change + probe).
+  // checkBackendDirect is fast: ECONNREFUSED for offline = ~1 ms, success = ~10 ms.
+  backendOnline = await checkBackendDirect(settings?.backendUrl);
 
   if (!settings.enabled) return;
   if (isSiteDisabled(settings)) return;
@@ -220,6 +219,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
     case MSG.OFFSCREEN_AUDIO_READY:
       orchestrator.handleAudioBlob(message.buffer, message.mime);
+      sendResponse({ ok: true });
+      break;
+
+    case MSG.OFFSCREEN_ERROR:
+      // Mic access failed or recording state was inconsistent — reset the button
+      orchestrator.handleRecordingError(message.error || 'Recording failed');
       sendResponse({ ok: true });
       break;
 
