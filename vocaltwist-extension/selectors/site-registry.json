@@ -48,5 +48,10 @@
     "responseSelector": ".swiper-slide-active [data-test-id='chat-message-text']",
     "streamingIndicator": null,
     "inputSelector": "textarea"
+  },
+  "localhost": {
+    "responseSelector": ".message.assistant .bubble",
+    "streamingIndicator": null,
+    "inputSelector": "#user-input"
   }
 }

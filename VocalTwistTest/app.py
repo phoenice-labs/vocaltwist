@@ -6,12 +6,13 @@ backed by LM Studio (mistralai/ministral-3-3b by default).
 from __future__ import annotations
 
 import collections
+import json as _json
 import logging
 import os
 import sys
 import time
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, status
@@ -19,6 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
+from starlette.middleware.base import BaseHTTPMiddleware
 
 # ── Path bootstrap — makes `backend` importable without installing it ──────────
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -135,6 +137,36 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
     _log.info("VocalTwistTest shutdown complete")
 
 
+# ── Test-capture state (used by Playwright extension tests) ───────────────────
+# Stores the language from the most recent /api/speak and /api/transcribe calls
+# so tests can verify the extension sent the correct language without needing
+# CDP network interception (which cannot capture extension content-script requests).
+_test_state: dict[str, Any] = {"last_speak": None, "last_transcribe": None}
+
+
+class _TestCaptureMiddleware(BaseHTTPMiddleware):
+    """Lightweight middleware that records language from speak/transcribe calls."""
+
+    async def dispatch(self, request: Request, call_next):  # type: ignore[override]
+        path = request.url.path
+        if request.method == "POST" and path == "/api/speak":
+            # request.body() caches the body so the route handler can still read it
+            try:
+                body_bytes = await request.body()
+                data = _json.loads(body_bytes)
+                _test_state["last_speak"] = {
+                    "language": data.get("language"),
+                    "text_snippet": (data.get("text") or "")[:80],
+                }
+            except Exception:
+                pass
+        elif request.method == "POST" and path == "/api/transcribe":
+            _test_state["last_transcribe"] = {
+                "language": request.query_params.get("language"),
+            }
+        return await call_next(request)
+
+
 # ── FastAPI application ────────────────────────────────────────────────────────
 app = FastAPI(
     title="VocalTwistTest — Demo Chatbot",
@@ -155,9 +187,32 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(_TestCaptureMiddleware)
 
 # Include VocalTwist router — provides /api/transcribe, /api/speak, etc.
 app.include_router(vt_router)
+
+
+# ── Test helper endpoints (Playwright extension tests) ────────────────────────
+
+@app.get("/api/test/last-speak", include_in_schema=False)
+async def _test_last_speak() -> dict:
+    """Return language + text snippet from the most recent /api/speak call."""
+    return _test_state.get("last_speak") or {}
+
+
+@app.get("/api/test/last-transcribe", include_in_schema=False)
+async def _test_last_transcribe() -> dict:
+    """Return language from the most recent /api/transcribe call."""
+    return _test_state.get("last_transcribe") or {}
+
+
+@app.post("/api/test/reset", include_in_schema=False)
+async def _test_reset() -> dict:
+    """Clear captured test state between test runs."""
+    _test_state["last_speak"] = None
+    _test_state["last_transcribe"] = None
+    return {"ok": True}
 
 
 # ── Pydantic models ────────────────────────────────────────────────────────────

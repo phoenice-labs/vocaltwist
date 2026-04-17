@@ -310,9 +310,14 @@ class AmbientVAD {
       const wavBlob  = AmbientVAD.encodeWav(chunks, this.#sampleRate);
       const formData = new FormData();
       formData.append('audio', wavBlob, 'ambient.wav');
-      formData.append('language', this._opts.language);
 
-      const response = await fetch(this._opts.transcribeUrl, {
+      // Language MUST be a URL query param — backend ignores FormData fields.
+      // Normalize BCP-47 (hi-IN) → ISO 639-1 short code (hi) for Whisper.
+      const langCode     = (this._opts.language || 'en').split('-')[0].toLowerCase();
+      const transcodeUrl = new URL(this._opts.transcribeUrl);
+      transcodeUrl.searchParams.set('language', langCode);
+
+      const response = await fetch(transcodeUrl.toString(), {
         method : 'POST',
         body   : formData,
         signal : this.#abortController.signal,

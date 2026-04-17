@@ -128,7 +128,7 @@ function startAmbientVAD(settings, backendOnline) {
   chrome.runtime.sendMessage({
     type:          MSG.OFFSCREEN_VAD_START,
     transcribeUrl: `${backendUrl}/api/transcribe`,
-    language:      settings.language,
+    language:      (settings.language || 'en').split('-')[0].toLowerCase(),
   });
 }
 

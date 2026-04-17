@@ -26,8 +26,10 @@ services:
     volumes:
       # Mount a local logs directory for persistence
       - ./logs:/app/logs
-      # Mount static files for live editing without rebuild
+      # Mount source files for live editing without rebuild
       - ./VocalTwistTest/static:/app/VocalTwistTest/static:ro
+      - ./VocalTwistTest/app.py:/app/VocalTwistTest/app.py:ro
+      - ./backend:/app/backend:ro
     restart: unless-stopped
     healthcheck:
       test:
