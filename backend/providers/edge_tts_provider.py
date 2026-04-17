@@ -111,7 +111,9 @@ class EdgeTTSProvider(TTSProvider):
 
         import edge_tts  # noqa: PLC0415 – lazy import
 
-        selected_voice = voice or _LANG_VOICE_MAP.get(language or "", self._default_voice)
+        selected_voice = voice or _LANG_VOICE_MAP.get(
+            (language or "").split("-")[0].lower(), self._default_voice
+        )
 
         logger.debug(
             "Starting TTS synthesis",

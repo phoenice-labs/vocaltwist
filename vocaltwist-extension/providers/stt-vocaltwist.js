@@ -33,14 +33,21 @@ class VocalTwistSTTProvider {
 
     const formData = new FormData();
     formData.append('audio', blob, 'recording.webm');
-    if (language) formData.append('language', language);
 
     const headers = {};
     if (this._apiKey) {
       headers['X-Api-Key'] = this._apiKey;
     }
 
-    const res = await fetch(`${this._backendUrl}/api/transcribe`, {
+    // Backend reads language as a URL query param (not a form field).
+    // Normalize BCP-47 (hi-IN) → ISO 639-1 short code (hi) for Whisper.
+    const url = new URL(`${this._backendUrl}/api/transcribe`);
+    if (language) {
+      const langCode = language.split('-')[0].toLowerCase();
+      url.searchParams.set('language', langCode);
+    }
+
+    const res = await fetch(url.toString(), {
       method: 'POST',
       headers,
       body:   formData,

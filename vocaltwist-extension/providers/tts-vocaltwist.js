@@ -36,12 +36,15 @@ class VocalTwistTTSProvider {
     const headers = { 'Content-Type': 'application/json' };
     if (this._apiKey) headers['X-Api-Key'] = this._apiKey;
 
+    // Normalize BCP-47 (hi-IN) → ISO 639-1 short code (hi) for voice lookup.
+    const langCode = language ? language.split('-')[0].toLowerCase() : undefined;
+
     let res;
     try {
       res = await fetch(`${this._backendUrl}/api/speak`, {
         method:  'POST',
         headers,
-        body:    JSON.stringify({ text, voice, language, rate }),
+        body:    JSON.stringify({ text, voice, language: langCode, rate }),
         signal:  AbortSignal.timeout(30_000),
       });
     } catch (err) {

@@ -177,6 +177,11 @@ async def transcribe(
     audio_bytes = await validate_audio_file(audio, settings)
     content_type = (audio.content_type or "audio/webm").split(";")[0].strip()
 
+    # Normalise BCP-47 tags (e.g. 'hi-IN') to ISO 639-1 short codes ('hi')
+    # that Whisper and the voice-lookup maps expect.
+    if language:
+        language = language.split("-")[0].lower()
+
     logger.info(
         "Transcribe request received",
         extra={

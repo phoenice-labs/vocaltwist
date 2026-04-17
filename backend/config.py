@@ -107,7 +107,12 @@ class VocalTwistSettings(BaseSettings):
         return v
 
     def voice_for_lang(self, lang: str) -> str:
-        """Return the default edge-tts voice for a given language code."""
+        """Return the default edge-tts voice for a given language code.
+
+        Accepts both short ISO 639-1 codes (``hi``) and full BCP-47 tags
+        (``hi-IN``) — the region suffix is stripped before lookup.
+        """
+        base = (lang or "").split("-")[0].lower()
         voices = {
             "en": "en-US-AriaNeural",
             "hi": "hi-IN-SwaraNeural",
@@ -120,7 +125,7 @@ class VocalTwistSettings(BaseSettings):
             "ja": "ja-JP-NanamiNeural",
             "ar": "ar-SA-ZariyahNeural",
         }
-        return voices.get(lang, self.default_voice)
+        return voices.get(base, self.default_voice)
 
     @classmethod
     def settings_customise_sources(  # type: ignore[override]
