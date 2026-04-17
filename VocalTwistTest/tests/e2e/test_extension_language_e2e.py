@@ -539,3 +539,68 @@ def test_voice_selection_tts(
         f"lastSpeakProvider='{dom_provider}'. "
         "The voice may not be propagating through storage→orchestrator→tts-vocaltwist."
     )
+
+
+# ─── Real Pipeline Test (offscreen doc → SW → content → backend) ─────────────
+
+
+def test_real_recording_pipeline(
+    browser_context: BrowserContext,
+    ext_id: str,
+    test_page: Page,
+) -> None:
+    """Verify the FULL recording pipeline: offscreen getUserMedia → MediaRecorder
+    → OFFSCREEN_AUDIO_READY → SW relay → content handleAudioBlob → /api/transcribe.
+
+    This test does NOT use _inject_audio_to_content().  It triggers the real
+    offscreen document pipeline with Chrome's --use-fake-device-for-media-stream
+    synthetic audio.  Validates the OFFSCREEN_READY race-condition fix and the
+    setTimeout(0) deferral of OFFSCREEN_RECORD_START.
+    """
+    _reset_captures()
+    _set_language(browser_context, ext_id, "en-US", test_page)
+    test_page.click("#user-input")
+    time.sleep(0.5)
+
+    # Start recording via real TOGGLE_MIC → startRecording() → START_RECORDING → offscreen
+    _toggle_mic(browser_context, test_page)
+
+    # Wait for mic to reach 'recording' state (mic button data-state attr)
+    try:
+        test_page.wait_for_function(
+            "document.querySelector('#vt-mic-button')?.dataset?.state === 'recording'",
+            timeout=6_000,
+        )
+    except Exception:
+        mic_state = test_page.evaluate(
+            "document.querySelector('#vt-mic-button')?.dataset?.state || 'not-found'"
+        )
+        raise AssertionError(
+            f"Mic never reached 'recording' state (got '{mic_state}'). "
+            "START_RECORDING message may not have reached the offscreen doc. "
+            "Check OFFSCREEN_READY handshake and setTimeout(0) deferral."
+        )
+
+    # Let fake device record for ~1 second
+    time.sleep(1.2)
+
+    # Stop recording → STOP_RECORDING → offscreen → OFFSCREEN_AUDIO_READY → content
+    _toggle_mic(browser_context, test_page)
+
+    # Wait for backend to receive the transcription request
+    deadline = time.monotonic() + STT_PROCESS_S
+    data: dict = {}
+    while time.monotonic() < deadline:
+        data = _last_transcribe()
+        if data:
+            break
+        time.sleep(1)
+
+    assert data, (
+        "Real pipeline test FAILED: /api/transcribe was never called. "
+        "The OFFSCREEN_AUDIO_READY message did not reach the content script. "
+        "Possible causes: offscreen doc didn't receive OFFSCREEN_RECORD_START "
+        "(OFFSCREEN_READY race), or SW→content relay failed (recordingTabId lost). "
+        f"vtBackendOnline={test_page.evaluate('document.documentElement.dataset.vtBackendOnline')}, "
+        f"vtLastSttProvider={test_page.evaluate('document.documentElement.dataset.vtLastSttProvider or \"not-set\"')}"
+    )

@@ -76,6 +76,26 @@ function updateBadge(recording = false) {
 
 // ─── Offscreen Document ───────────────────────────────────────────────────────
 
+/**
+ * Returns a Promise that resolves when the offscreen doc signals it's ready
+ * (OFFSCREEN_READY), or after a 3-second fallback timeout.
+ * Must be called BEFORE chrome.offscreen.createDocument() so the listener
+ * is registered before the doc loads and sends its ready signal.
+ */
+function _waitForOffscreenReady() {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, 3000); // Fallback if signal never arrives
+    const listener = (msg) => {
+      if (msg.type === MSG.OFFSCREEN_READY) {
+        clearTimeout(timer);
+        chrome.runtime.onMessage.removeListener(listener);
+        resolve();
+      }
+    };
+    chrome.runtime.onMessage.addListener(listener);
+  });
+}
+
 async function ensureOffscreenDocument() {
   if (offscreenActive) return;
   const contexts = await chrome.offscreen.getContexts?.() ?? [];
@@ -83,11 +103,14 @@ async function ensureOffscreenDocument() {
     offscreenActive = true;
     return;
   }
+  // Register the ready listener BEFORE creating the doc so we catch the signal
+  const readyPromise = _waitForOffscreenReady();
   await chrome.offscreen.createDocument({
     url:    chrome.runtime.getURL('offscreen.html'),
     reasons: ['USER_MEDIA'],
     justification: 'Microphone recording for VocalTwist voice input',
   });
+  await readyPromise; // Wait until offscreen.js has registered its listeners
   offscreenActive = true;
 }
 
@@ -142,19 +165,25 @@ async function handleMessage(message, sender, sendResponse) {
         chrome.storage.session.set({ recordingTabId });
       }
       updateBadge(true);
-      chrome.runtime.sendMessage({
+      // Defer via setTimeout(0) so this message is sent OUTSIDE the current
+      // onMessage handler call stack. Chrome MV3 has a known limitation where
+      // runtime.sendMessage() called synchronously inside an onMessage handler
+      // may not be delivered to the offscreen document.
+      const startPayload = {
         type:         MSG.OFFSCREEN_RECORD_START,
         language:     message.language || settings.language,
         backendUrl:   settings.backendUrl,
         apiKey:       settings.apiKey,
         backendOnline,
-      });
+      };
+      setTimeout(() => chrome.runtime.sendMessage(startPayload).catch(() => {}), 0);
       sendResponse({ ok: true });
       break;
     }
 
     case MSG.STOP_RECORDING: {
-      chrome.runtime.sendMessage({ type: MSG.OFFSCREEN_RECORD_STOP });
+      // Defer similarly to avoid onMessage handler limitations
+      setTimeout(() => chrome.runtime.sendMessage({ type: MSG.OFFSCREEN_RECORD_STOP }).catch(() => {}), 0);
       updateBadge(false);
       sendResponse({ ok: true });
       break;

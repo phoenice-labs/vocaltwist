@@ -27,6 +27,7 @@ const MSG = {
   OFFSCREEN_VAD_STOP:      'OFFSCREEN_VAD_STOP',      // {}
   OFFSCREEN_TRANSCRIPT:    'OFFSCREEN_TRANSCRIPT',    // { text: string }
   OFFSCREEN_ERROR:         'OFFSCREEN_ERROR',         // { error: string }
+  OFFSCREEN_READY:         'OFFSCREEN_READY',         // offscreen doc loaded and ready
 };
 
 if (typeof globalThis !== 'undefined') {

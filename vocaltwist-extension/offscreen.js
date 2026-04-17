@@ -154,3 +154,9 @@ chrome.runtime.onMessage.addListener((message) => {
       break;
   }
 });
+
+// ─── Ready Signal ─────────────────────────────────────────────────────────────
+// Notify background.js that this offscreen document is fully loaded and
+// all message listeners are registered. background.js waits for this before
+// sending OFFSCREEN_RECORD_START to avoid a race condition on first creation.
+chrome.runtime.sendMessage({ type: MSG.OFFSCREEN_READY }).catch(() => {});
