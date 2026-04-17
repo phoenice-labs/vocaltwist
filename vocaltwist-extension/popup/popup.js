@@ -85,26 +85,92 @@ async function loadSettings() {
   // Custom selector for this site
   customSelector.value = settings.customSelectors?.[currentHostname] || '';
 
-  // Populate voices
-  populateVoices(settings.voice);
+  // Populate voices (awaited so backendUrl.value is ready before the fetch)
+  await populateVoices(settings.voice);
 
   return settings;
 }
 
 // ─── Voice dropdown ───────────────────────────────────────────────────────────
 
-function populateVoices(selectedVoice) {
-  const voices = speechSynthesis.getVoices();
-  // Clear existing options except 'auto'
-  voiceSelect.innerHTML = '<option value="auto">Auto</option>';
-  voices.forEach((v) => {
-    const opt   = document.createElement('option');
-    opt.value   = v.voiceURI;
-    opt.textContent = `${v.name} (${v.lang})`;
-    voiceSelect.appendChild(opt);
-  });
-  voiceSelect.value = selectedVoice || 'auto';
+async function populateVoices(selectedVoice) {
+  voiceSelect.innerHTML = '<option value="auto">Auto (recommended)</option>';
+
+  // Fetch edge-tts Neural voices from the VocalTwist backend.
+  // The API returns: { voices: { "en-US": [VoiceInfo, ...], "hi-IN": [...], ... } }
+  // (a dict keyed by language, NOT a flat array)
+  const url = (backendUrl.value || 'http://localhost:8000').replace(/\/$/, '');
+  const currentLang     = languageSelect.value;                         // e.g. "hi-IN"
+  const currentLangCode = currentLang.split('-')[0].toLowerCase();      // e.g. "hi" (matches API key)
+  let backendVoicesLoaded = false;
+
+  try {
+    const res = await fetch(`${url}/api/voices`, { signal: AbortSignal.timeout(3_000) });
+    if (res.ok) {
+      const data = await res.json();
+      // data.voices is an object: { "en-US": [VoiceInfo,...], "hi-IN": [VoiceInfo,...], ... }
+      const voicesMap = (data.voices && typeof data.voices === 'object') ? data.voices : {};
+
+      // Current language voices first (optgroup), then all others
+      const currentVoices = voicesMap[currentLangCode] || [];
+      const otherEntries  = Object.entries(voicesMap).filter(([lang]) => lang !== currentLangCode);
+
+      const totalCount = currentVoices.length + otherEntries.reduce((n, [, vs]) => n + vs.length, 0);
+
+      if (totalCount > 0) {
+        if (currentVoices.length > 0) {
+          const grp = document.createElement('optgroup');
+          grp.label = `Neural — ${currentLang}`;  // e.g. "Neural — hi-IN"
+          currentVoices.forEach((v) => {
+            const opt = document.createElement('option');
+            opt.value = v.name;
+            opt.textContent = `${v.name}${v.gender ? ` · ${v.gender}` : ''}`;
+            grp.appendChild(opt);
+          });
+          voiceSelect.appendChild(grp);
+        }
+
+        if (otherEntries.length > 0) {
+          const grp = document.createElement('optgroup');
+          grp.label = 'Other Neural Voices';
+          otherEntries.forEach(([, voices]) => {
+            voices.forEach((v) => {
+              const opt = document.createElement('option');
+              opt.value = v.name;
+              opt.textContent = `${v.name}${v.gender ? ` · ${v.gender}` : ''}`;
+              grp.appendChild(opt);
+            });
+          });
+          voiceSelect.appendChild(grp);
+        }
+
+        // Restore previously saved voice (may be from any language)
+        voiceSelect.value = selectedVoice || 'auto';
+        backendVoicesLoaded = true;
+      }
+    }
+  } catch (err) { console.warn('[VocalTwist] populateVoices fetch failed:', err.message); }
+
+  if (!backendVoicesLoaded) {
+    // Fallback: browser Web Speech API voices (when backend is offline)
+    const voices = speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      const grp = document.createElement('optgroup');
+      grp.label = 'Browser Voices (offline mode)';
+      voices.forEach((v) => {
+        const opt   = document.createElement('option');
+        opt.value   = v.voiceURI;
+        opt.textContent = `${v.name} (${v.lang})`;
+        grp.appendChild(opt);
+      });
+      voiceSelect.appendChild(grp);
+    }
+    voiceSelect.value = selectedVoice || 'auto';
+  }
 }
+
+// Re-populate voices if language changes (pick language-appropriate default)
+languageSelect?.addEventListener('change', () => populateVoices('auto'));
 
 speechSynthesis.onvoiceschanged = () => populateVoices(voiceSelect.value);
 

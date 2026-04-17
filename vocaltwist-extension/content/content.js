@@ -192,9 +192,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const newSettings = message.settings;
       orchestrator.updateSettings(newSettings);
 
-      // Keep DOM language attribute in sync so page JS can read current language
+      // Keep DOM attributes in sync so page JS can read current settings
       if (newSettings.language) {
         document.documentElement.dataset.vtLanguage = newSettings.language;
+      }
+      if (newSettings.voice !== undefined) {
+        document.documentElement.dataset.vtVoice = newSettings.voice || 'auto';
       }
 
       // Re-wire response watcher if TTS settings changed
@@ -264,6 +267,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (patch.language) {
     document.documentElement.dataset.vtLanguage = patch.language;
     console.log('[VocalTwist] storage.onChanged language=' + patch.language);
+  }
+  if (patch.voice !== undefined) {
+    document.documentElement.dataset.vtVoice = patch.voice || 'auto';
   }
 
   // Re-wire response watcher if TTS settings changed

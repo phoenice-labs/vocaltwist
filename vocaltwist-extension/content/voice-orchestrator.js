@@ -150,6 +150,7 @@ const voiceOrchestrator = (() => {
     // Write to DOM so Playwright (main world) can observe which provider fired
     document.documentElement.dataset.vtLastSpeakProvider = providerName;
     document.documentElement.dataset.vtLastSpeakLang     = _settings?.language || '';
+    document.documentElement.dataset.vtLastSpeakVoice    = _settings?.voice    || '';
     document.documentElement.dataset.vtLastSpeakTs       = Date.now().toString();
 
     _isSpeaking = true;

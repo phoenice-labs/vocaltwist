@@ -300,6 +300,12 @@ def _inject_audio_to_content(ctx: BrowserContext, page: Page) -> None:
     )
 
 
+def _speak_history() -> list:
+    r = httpx.get(f"{BACKEND_URL}/api/test/speak-history", timeout=5)
+    return r.json() if r.status_code == 200 else []
+
+
+
 def _reset_captures() -> None:
     """Clear server-side test capture state."""
     httpx.post(f"{BACKEND_URL}/api/test/reset", timeout=5)
@@ -422,4 +428,114 @@ def test_stt_language(
     assert got == lang.code, (
         f"[{lang.bcp47}] Expected ?language={lang.code} in /api/transcribe URL, "
         f"got '{got}'. Check stt-vocaltwist.js BCP-47 normalization."
+    )
+
+
+# ─── Voice Selection Tests ────────────────────────────────────────────────────
+
+# Voice cases: (bcp47 lang, expected Neural voice name from /api/voices)
+VOICE_CASES = [
+    ("en-US", "en-US-AriaNeural"),
+    ("hi-IN", "hi-IN-SwaraNeural"),
+    ("es-ES", "es-ES-ElviraNeural"),
+    ("fr-FR", "fr-FR-DeniseNeural"),
+    ("de-DE", "de-DE-KatjaNeural"),
+]
+
+
+def _set_voice(ctx: BrowserContext, ext_id: str, lang_bcp47: str, voice_name: str, page: Page) -> None:
+    """Set language + voice directly in chrome.storage and wait for content script to sync.
+
+    Writes to storage via the extension popup context (which has chrome.storage access)
+    rather than interacting with the voice dropdown UI.  This avoids the populateVoices
+    async fetch race condition while still testing the real chain:
+      chrome.storage.onChanged → orchestrator.updateSettings → _settings.voice
+      → speak() → tts-vocaltwist.speak({voice}) → POST /api/speak body.voice
+    """
+    popup = ctx.new_page()
+    try:
+        popup.goto(
+            f"chrome-extension://{ext_id}/popup/popup.html",
+            wait_until="domcontentloaded",
+        )
+        popup.wait_for_selector("#saveBtn", timeout=5_000)
+        # Merge language+voice into existing storage — triggers chrome.storage.onChanged
+        # in content.js which calls orchestrator.updateSettings(patch) and sets
+        # data-vt-voice on documentElement.
+        popup.evaluate(f"""
+            new Promise(resolve => {{
+                chrome.storage.sync.get(null, existing => {{
+                    chrome.storage.sync.set({{
+                        ...existing,
+                        language: '{lang_bcp47}',
+                        voice: '{voice_name}',
+                        ttsEnabled: true
+                    }}, resolve);
+                }});
+            }})
+        """)
+        time.sleep(0.3)
+    finally:
+        popup.close()
+
+    # Wait for data-vt-voice to be updated by the storage.onChanged handler in content.js.
+    page.wait_for_function(
+        f"document.documentElement.dataset.vtVoice === '{voice_name}'",
+        timeout=6_000,
+    )
+    # Allow respWatcher MutationObserver to settle before injecting the bubble.
+    time.sleep(0.5)
+
+
+@pytest.mark.parametrize(
+    "lang_bcp47,voice_name",
+    VOICE_CASES,
+    ids=[v for _, v in VOICE_CASES],
+)
+def test_voice_selection_tts(
+    browser_context: BrowserContext,
+    ext_id: str,
+    test_page: Page,
+    lang_bcp47: str,
+    voice_name: str,
+) -> None:
+    """Selecting a Neural voice in the popup sends that voice to /api/speak.
+
+    Verifies the full chain:
+      popup saves voice → chrome.storage.onChanged → orchestrator.updateSettings
+      → tts-vocaltwist.speak({ voice }) → POST /api/speak body.voice == voice_name
+    """
+    _reset_captures()
+    _set_voice(browser_context, ext_id, lang_bcp47, voice_name, test_page)
+
+    test_text = (
+        f"[{voice_name}] Voice selection verification test. "
+        "This should be spoken with the selected Neural voice."
+    )
+    _inject_ai_response(test_page, test_text)
+    time.sleep(TTS_WAIT_S)
+
+    # DOM diagnostics written by speak() in voice-orchestrator.js
+    dom_voice    = test_page.evaluate("document.documentElement.dataset.vtLastSpeakVoice || 'not-called'")
+    dom_lang     = test_page.evaluate("document.documentElement.dataset.vtLastSpeakLang  || 'not-called'")
+    dom_provider = test_page.evaluate("document.documentElement.dataset.vtLastSpeakProvider || 'not-called'")
+
+    data = _last_speak()
+    assert data, (
+        f"No /api/speak captured after selecting voice '{voice_name}' "
+        f"for language '{lang_bcp47}'. "
+        f"DOM diagnostics: lastSpeakVoice='{dom_voice}', lastSpeakLang='{dom_lang}', "
+        f"lastSpeakProvider='{dom_provider}'. "
+        "If provider='not-called', response-watcher did not trigger orchestrator.speak(). "
+        "If provider='native', backend was offline and NativeTTS was used."
+    )
+    got_voice = data.get("voice")
+    history   = _speak_history()
+    assert got_voice == voice_name, (
+        f"Expected voice='{voice_name}' in /api/speak body, got '{got_voice}'. "
+        f"Full last capture: {data}. "
+        f"Full speak history ({len(history)} calls): {history}. "
+        f"DOM diagnostics: lastSpeakVoice='{dom_voice}', lastSpeakLang='{dom_lang}', "
+        f"lastSpeakProvider='{dom_provider}'. "
+        "The voice may not be propagating through storage→orchestrator→tts-vocaltwist."
     )

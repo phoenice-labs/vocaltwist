@@ -141,7 +141,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:  # noqa: ARG001
 # Stores the language from the most recent /api/speak and /api/transcribe calls
 # so tests can verify the extension sent the correct language without needing
 # CDP network interception (which cannot capture extension content-script requests).
-_test_state: dict[str, Any] = {"last_speak": None, "last_transcribe": None}
+_test_state: dict[str, Any] = {"last_speak": None, "last_transcribe": None, "speak_history": []}
 
 
 class _TestCaptureMiddleware(BaseHTTPMiddleware):
@@ -156,10 +156,16 @@ class _TestCaptureMiddleware(BaseHTTPMiddleware):
                 data = _json.loads(body_bytes)
                 _test_state["last_speak"] = {
                     "language": data.get("language"),
+                    "voice": data.get("voice"),
                     "text_snippet": (data.get("text") or "")[:80],
+                    "raw_keys": sorted(data.keys()),   # debug: which keys arrived
                 }
-            except Exception:
-                pass
+                _test_state["speak_history"].append(_test_state["last_speak"].copy())
+            except Exception as _exc:
+                _test_state["last_speak"] = {
+                    "error": str(_exc),
+                    "raw_body": (body_bytes[:200] if 'body_bytes' in dir() else ""),
+                }
         elif request.method == "POST" and path == "/api/transcribe":
             _test_state["last_transcribe"] = {
                 "language": request.query_params.get("language"),
@@ -207,11 +213,18 @@ async def _test_last_transcribe() -> dict:
     return _test_state.get("last_transcribe") or {}
 
 
-@app.post("/api/test/reset", include_in_schema=False)
+@app.get("/api/test/speak-history", include_in_schema=False)
+async def _test_speak_history() -> list:
+    """Return all /api/speak calls captured since last reset."""
+    return _test_state.get("speak_history") or []
+
+
+
 async def _test_reset() -> dict:
     """Clear captured test state between test runs."""
     _test_state["last_speak"] = None
     _test_state["last_transcribe"] = None
+    _test_state["speak_history"] = []
     return {"ok": True}
 
 

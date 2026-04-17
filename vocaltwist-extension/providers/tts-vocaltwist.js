@@ -33,18 +33,28 @@ class VocalTwistTTSProvider {
   async speak(text, { voice, language, rate, onEnd, onError } = {}) {
     this.stop();
 
+    console.log('[VocalTwist] tts-vocaltwist.speak()', { language, voice, backendUrl: this._backendUrl });
+
     const headers = { 'Content-Type': 'application/json' };
     if (this._apiKey) headers['X-Api-Key'] = this._apiKey;
 
     // Normalize BCP-47 (hi-IN) → ISO 639-1 short code (hi) for voice lookup.
     const langCode = language ? language.split('-')[0].toLowerCase() : undefined;
 
+    // Only send edge-tts compatible voice names to the backend.
+    // Browser Web Speech API voice URIs (e.g. "Google हिन्दी (hi-IN)") are
+    // incompatible with edge-tts and cause a 500 error — filter them out and
+    // let the backend choose the correct voice from the language code instead.
+    const edgeVoice = (voice && voice !== 'auto' && /Neural$/i.test(voice))
+      ? voice
+      : undefined;
+
     let res;
     try {
       res = await fetch(`${this._backendUrl}/api/speak`, {
         method:  'POST',
         headers,
-        body:    JSON.stringify({ text, voice, language: langCode, rate }),
+        body:    JSON.stringify({ text, voice: edgeVoice, language: langCode, rate }),
         signal:  AbortSignal.timeout(30_000),
       });
     } catch (err) {
