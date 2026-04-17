@@ -121,7 +121,19 @@ const voiceOrchestrator = (() => {
       chrome.runtime.sendMessage({
         type:     MSG.START_RECORDING,
         language: _settings.language,
-      }).catch(e => console.warn('[VocalTwist] START_RECORDING error:', e.message));
+      }).then(resp => {
+        if (!resp?.ok) {
+          console.warn('[VocalTwist] START_RECORDING rejected:', resp);
+          _isRecording = false;
+          window.__vtMicButton?.setState('error');
+          setTimeout(() => window.__vtMicButton?.setState('idle'), 3000);
+        }
+      }).catch(e => {
+        console.warn('[VocalTwist] START_RECORDING failed:', e.message);
+        _isRecording = false;
+        window.__vtMicButton?.setState('error');
+        setTimeout(() => window.__vtMicButton?.setState('idle'), 3000);
+      });
     }
   }
 
@@ -140,12 +152,13 @@ const voiceOrchestrator = (() => {
       window.__vtMicButton?.setState('idle');
     } else {
       window.__vtMicButton?.setState('processing');
-      // Safety timeout: if OFFSCREEN_AUDIO_READY never arrives, auto-reset
+      // Safety timeout: if OFFSCREEN_AUDIO_READY never arrives (relay failed),
+      // auto-reset. 10s is enough for any real recording.
       _processingTimeout = setTimeout(() => {
-        console.warn('[VocalTwist] Safety timeout: mic reset from processing to idle');
+        console.warn('[VocalTwist] Safety timeout: OFFSCREEN_AUDIO_READY never arrived — check extension relay. Resetting mic.');
         window.__vtMicButton?.setState('idle');
         _processingTimeout = null;
-      }, 15_000);
+      }, 10_000);
       chrome.runtime.sendMessage({ type: MSG.STOP_RECORDING });
     }
   }

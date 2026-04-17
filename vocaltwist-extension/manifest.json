@@ -3,29 +3,24 @@
   "name": "VocalTwist — Local Voice for Any App",
   "version": "1.0.0",
   "description": "Self-hosted voice I/O for any web app. Speak into any text field. Hear AI responses. Uses your local Whisper + Edge TTS — no cloud.",
-
   "permissions": [
     "activeTab",
     "storage",
-    "offscreen"
-  ],
-
-  "optional_permissions": [
+    "offscreen",
     "microphone"
   ],
-
   "host_permissions": [
     "<all_urls>"
   ],
-
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "js": [
         "shared/constants.js",
         "shared/messages.js",
@@ -39,11 +34,12 @@
         "content/voice-orchestrator.js",
         "content/content.js"
       ],
-      "css": ["content/content.css"],
+      "css": [
+        "content/content.css"
+      ],
       "run_at": "document_idle"
     }
   ],
-
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
@@ -53,7 +49,6 @@
       "128": "icons/icon128.png"
     }
   },
-
   "commands": {
     "toggle-mic": {
       "suggested_key": {
@@ -63,18 +58,21 @@
       "description": "Toggle microphone recording"
     }
   },
-
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-
   "web_accessible_resources": [
     {
-      "resources": ["offscreen.html", "selectors/site-registry.json"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "offscreen.html",
+        "selectors/site-registry.json"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }

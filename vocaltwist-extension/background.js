@@ -135,8 +135,12 @@ async function handleMessage(message, sender, sendResponse) {
 
     case MSG.START_RECORDING: {
       await ensureOffscreenDocument();
-      // Remember which tab requested recording so we can relay the audio back
+      // Remember which tab requested recording so we can relay the audio back.
+      // Also persist in session storage so it survives SW restarts.
       recordingTabId = sender?.tab?.id ?? null;
+      if (recordingTabId) {
+        chrome.storage.session.set({ recordingTabId });
+      }
       updateBadge(true);
       chrome.runtime.sendMessage({
         type:         MSG.OFFSCREEN_RECORD_START,
@@ -170,21 +174,37 @@ async function handleMessage(message, sender, sendResponse) {
 
     case MSG.OFFSCREEN_AUDIO_READY: {
       // Relay audio back to the tab that started recording.
-      // Fall back to active tab if recordingTabId was not captured.
+      // 1. Try in-memory recordingTabId (available if SW wasn't killed)
+      // 2. Fall back to session storage (survives SW restarts)
+      // 3. Fall back to active tab query
+      // 4. If sendMessage to specific tab fails, broadcast to all tabs
       let targetTabId = recordingTabId;
       if (!targetTabId) {
-        const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const stored = await chrome.storage.session.get(['recordingTabId']);
+        targetTabId  = stored.recordingTabId ?? null;
+      }
+      if (!targetTabId) {
+        const tabs  = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         targetTabId = tabs[0]?.id ?? null;
       }
       console.log('[VT BG] OFFSCREEN_AUDIO_READY → relaying to tabId=' + targetTabId);
       recordingTabId = null;
+      chrome.storage.session.remove('recordingTabId');
+
+      const audioMsg = {
+        type:   MSG.OFFSCREEN_AUDIO_READY,
+        buffer: message.buffer,
+        mime:   message.mime,
+        backendOnline,
+      };
       if (targetTabId) {
-        chrome.tabs.sendMessage(targetTabId, {
-          type:   MSG.OFFSCREEN_AUDIO_READY,
-          buffer: message.buffer,
-          mime:   message.mime,
-          backendOnline,
-        }).catch(e => console.warn('[VT BG] relay OFFSCREEN_AUDIO_READY error:', e.message));
+        chrome.tabs.sendMessage(targetTabId, audioMsg).catch(e => {
+          // Tab gone or no content script — broadcast as last resort
+          console.warn('[VT BG] relay failed (tabId=' + targetTabId + '), broadcasting:', e.message);
+          broadcastToAllTabs(audioMsg);
+        });
+      } else {
+        broadcastToAllTabs(audioMsg);
       }
       break;
     }
@@ -218,16 +238,21 @@ async function handleMessage(message, sender, sendResponse) {
       console.warn('[VT BG] OFFSCREEN_ERROR:', message.error);
       updateBadge(false);
       let targetTabId = recordingTabId;
-      recordingTabId  = null;
+      if (!targetTabId) {
+        const stored = await chrome.storage.session.get(['recordingTabId']);
+        targetTabId  = stored.recordingTabId ?? null;
+      }
+      recordingTabId = null;
+      chrome.storage.session.remove('recordingTabId');
       if (!targetTabId) {
         const tabs  = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
         targetTabId = tabs[0]?.id ?? null;
       }
+      const errMsg = { type: MSG.OFFSCREEN_ERROR, error: message.error };
       if (targetTabId) {
-        chrome.tabs.sendMessage(targetTabId, {
-          type:  MSG.OFFSCREEN_ERROR,
-          error: message.error,
-        }).catch(() => {});
+        chrome.tabs.sendMessage(targetTabId, errMsg).catch(() => broadcastToAllTabs(errMsg));
+      } else {
+        broadcastToAllTabs(errMsg);
       }
       sendResponse({ ok: true });
       break;

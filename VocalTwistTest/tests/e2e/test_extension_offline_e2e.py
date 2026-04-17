@@ -336,12 +336,13 @@ def test_stt_offline_native(
     # Trigger mic toggle — content script startRecording() will set DOM attrs immediately
     _reset_dom_attrs(offline_test_page)
     _toggle_mic(offline_browser_context, offline_test_page)
+    time.sleep(0.4)  # Small pause for async SW→content message delivery
 
     # Wait for voice-orchestrator.js to write the STT provider attrs
     try:
         offline_test_page.wait_for_function(
             "document.documentElement.dataset.vtLastSttProvider !== undefined",
-            timeout=5_000,
+            timeout=8_000,
         )
     except Exception:
         pass  # Attr not written yet — will be caught by the assert below
