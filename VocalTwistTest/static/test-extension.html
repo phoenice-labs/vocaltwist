@@ -413,14 +413,55 @@ const messagesEl = document.getElementById('chat-messages');
 const inputEl    = document.getElementById('user-input');
 const sendBtn    = document.getElementById('send-btn');
 
-// Canned AI responses for testing TTS
-const CANNED_RESPONSES = [
-  "I received your message. The VocalTwist extension should now read this response aloud using text-to-speech. If you hear this, the voice output is working correctly.",
-  "Great, the speech recognition captured your input! This response demonstrates the full voice loop — you spoke, the extension transcribed, and now I'm responding. The extension should speak this text.",
-  "Voice input confirmed. Your message was successfully injected into the text field by the VocalTwist extension. This is the AI response that will be read back to you.",
-  "The extension is working well. Whisper transcription is accurate and Edge Neural TTS will read this response in a natural voice when VocalTwist backend is running.",
-  "Testing complete. Both voice input and voice output are functioning. The extension seamlessly connects your browser to the local VocalTwist backend for privacy-preserving voice interaction.",
-];
+// Canned AI responses per language — used when LM Studio (/api/chat) is unreachable
+const LANG_CANNED_RESPONSES = {
+  en: [
+    "I received your message. The VocalTwist extension should now read this response aloud using text-to-speech. If you hear this, the voice output is working correctly.",
+    "Great, the speech recognition captured your input! This response demonstrates the full voice loop — you spoke, the extension transcribed, and now I'm responding. The extension should speak this text.",
+    "Voice input confirmed. Your message was successfully injected into the text field by the VocalTwist extension. This is the AI response that will be read back to you.",
+  ],
+  hi: [
+    "मैंने आपका संदेश प्राप्त किया। VocalTwist एक्सटेंशन अब इस प्रतिक्रिया को टेक्स्ट-टू-स्पीच का उपयोग करके जोर से पढ़ेगा। यदि आप यह सुनते हैं, तो वॉयस आउटपुट सही ढंग से काम कर रहा है।",
+    "बढ़िया, स्पीच रिकग्निशन ने आपका इनपुट कैप्चर किया! यह प्रतिक्रिया पूर्ण वॉयस लूप को प्रदर्शित करती है।",
+  ],
+  es: [
+    "Recibí tu mensaje. La extensión VocalTwist ahora leerá esta respuesta en voz alta usando texto a voz. Si escuchas esto, la salida de voz funciona correctamente.",
+    "¡Excelente! El reconocimiento de voz capturó tu entrada. Esta respuesta demuestra el bucle de voz completo.",
+  ],
+  fr: [
+    "J'ai reçu votre message. L'extension VocalTwist va maintenant lire cette réponse à haute voix en utilisant la synthèse vocale. Si vous entendez ceci, la sortie vocale fonctionne correctement.",
+    "Excellent! La reconnaissance vocale a capturé votre saisie. Cette réponse démontre la boucle vocale complète.",
+  ],
+  de: [
+    "Ich habe Ihre Nachricht erhalten. Die VocalTwist-Erweiterung wird diese Antwort nun laut vorlesen. Wenn Sie dies hören, funktioniert die Sprachausgabe korrekt.",
+    "Ausgezeichnet! Die Spracherkennung hat Ihre Eingabe erfasst. Diese Antwort demonstriert den vollständigen Sprachkreislauf.",
+  ],
+  zh: [
+    "我已收到您的消息。VocalTwist扩展程序现在将使用文字转语音功能大声朗读此回复。如果您听到这个，说明语音输出正常工作。",
+    "太好了！语音识别捕获了您的输入。这个回复展示了完整的语音循环。",
+  ],
+  ja: [
+    "メッセージを受け取りました。VocalTwistエクステンションがテキスト読み上げを使ってこの返答を読み上げます。これが聞こえれば、音声出力は正常に動作しています。",
+    "素晴らしい！音声認識があなたの入力を認識しました。この返答は完全な音声ループを示しています。",
+  ],
+  pt: [
+    "Recebi sua mensagem. A extensão VocalTwist agora vai ler esta resposta em voz alta usando texto para fala. Se você ouvir isso, a saída de voz está funcionando corretamente.",
+    "Ótimo! O reconhecimento de voz capturou sua entrada. Esta resposta demonstra o loop de voz completo.",
+  ],
+  ar: [
+    "لقد تلقيت رسالتك. سيقرأ امتداد VocalTwist هذا الرد بصوت عالٍ باستخدام تحويل النص إلى كلام. إذا سمعت هذا، فإن مخرجات الصوت تعمل بشكل صحيح.",
+    "رائع! التعرف على الكلام التقط مدخلاتك. هذا الرد يوضح حلقة الصوت الكاملة.",
+  ],
+  ko: [
+    "메시지를 받았습니다. VocalTwist 확장 프로그램이 이제 텍스트 음성 변환을 사용하여 이 응답을 큰 소리로 읽습니다. 이것이 들리면 음성 출력이 올바르게 작동하는 것입니다.",
+  ],
+  ru: [
+    "Я получил ваше сообщение. Расширение VocalTwist теперь прочитает этот ответ вслух с помощью синтеза речи. Если вы это слышите, вывод голоса работает правильно.",
+  ],
+  it: [
+    "Ho ricevuto il tuo messaggio. L'estensione VocalTwist leggerà ora questa risposta ad alta voce usando la sintesi vocale. Se senti questo, l'output vocale funziona correttamente.",
+  ],
+};
 
 let responseIndex = 0;
 
@@ -456,6 +497,10 @@ function sendMessage() {
   sendBtn.disabled = true;
   log(`User message sent: "${text.substring(0, 60)}…"`);
 
+  // Read language set by the extension (content.js writes data-vt-language)
+  const vtLang  = document.documentElement.dataset.vtLanguage || 'en-US';
+  const langCode = vtLang.split('-')[0].toLowerCase();
+
   // Add thinking indicator
   const thinkEl = document.createElement('div');
   thinkEl.className = 'message assistant';
@@ -463,13 +508,32 @@ function sendMessage() {
   messagesEl.appendChild(thinkEl);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  // Simulate AI response after short delay
-  setTimeout(() => {
-    thinkEl.remove();
-    streamResponse(CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
-    responseIndex++;
-    sendBtn.disabled = false;
-  }, 800 + Math.random() * 600);
+  // Call /api/chat — instructs LLM to respond in the currently selected language
+  fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: [{ role: 'user', content: text }],
+      language: langCode,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  })
+    .then((res) => res.ok ? res.json() : Promise.reject(res.status))
+    .then((data) => {
+      thinkEl.remove();
+      streamResponse(data.reply || '');
+      sendBtn.disabled = false;
+      log(`LLM replied in ${langCode} via /api/chat`);
+    })
+    .catch(() => {
+      // Fallback: language-aware canned response
+      thinkEl.remove();
+      const pool = LANG_CANNED_RESPONSES[langCode] || LANG_CANNED_RESPONSES['en'];
+      streamResponse(pool[responseIndex % pool.length]);
+      responseIndex++;
+      sendBtn.disabled = false;
+      log(`Using canned response (LM Studio unreachable) for lang: ${langCode}`, 'warn');
+    });
 }
 
 /**
@@ -510,13 +574,19 @@ inputEl.addEventListener('keydown', (e) => {
 
 // Dev buttons
 document.getElementById('btn-trigger-response').addEventListener('click', () => {
-  addMessage('assistant', CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
-  log('Injected instant AI response (no streaming)');
+  const vtLang  = document.documentElement.dataset.vtLanguage || 'en-US';
+  const langCode = vtLang.split('-')[0].toLowerCase();
+  const pool = LANG_CANNED_RESPONSES[langCode] || LANG_CANNED_RESPONSES['en'];
+  addMessage('assistant', pool[responseIndex % pool.length]);
+  log(`Injected instant AI response in lang: ${langCode}`);
   responseIndex++;
 });
 
 document.getElementById('btn-stream-response').addEventListener('click', () => {
-  streamResponse(CANNED_RESPONSES[responseIndex % CANNED_RESPONSES.length]);
+  const vtLang  = document.documentElement.dataset.vtLanguage || 'en-US';
+  const langCode = vtLang.split('-')[0].toLowerCase();
+  const pool = LANG_CANNED_RESPONSES[langCode] || LANG_CANNED_RESPONSES['en'];
+  streamResponse(pool[responseIndex % pool.length]);
   responseIndex++;
 });
 

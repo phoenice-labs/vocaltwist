@@ -329,8 +329,20 @@ async def speak(
     if limiter:
         limiter.check(request)
 
-    # Resolve voice: explicit → language default → global default
-    voice = body.voice or settings.voice_for_lang(body.language or settings.default_language)
+    # Resolve voice: explicit → language default → global default.
+    # Guard: only accept edge-tts compatible voice names (end with "Neural").
+    # Browser Web Speech API voice URIs (e.g. "Google हिन्दी (hi-IN)") are
+    # incompatible with edge-tts — silently ignore them and fall back to the
+    # language-based default so TTS always succeeds.
+    import re as _re  # noqa: PLC0415
+    raw_voice = body.voice
+    if raw_voice and not _re.search(r"Neural$", raw_voice, _re.IGNORECASE):
+        logger.debug(
+            "Ignoring incompatible voice name, using language default",
+            extra={"voice": raw_voice, "language": body.language},
+        )
+        raw_voice = None
+    voice = raw_voice or settings.voice_for_lang(body.language or settings.default_language)
 
     logger.info(
         "Speak request received",

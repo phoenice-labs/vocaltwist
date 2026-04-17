@@ -74,6 +74,9 @@ async function init() {
   // Initialize orchestrator
   orchestrator.init(settings, backendOnline);
 
+  // Expose current language for the test page (reads dataset.vtLanguage)
+  document.documentElement.dataset.vtLanguage = settings.language || 'en-US';
+
   // Wire mic button click → toggle recording
   micBtn.setOnClick((currentState) => {
     if (currentState === 'recording') {
@@ -164,6 +167,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     case MSG.SETTINGS_UPDATED: {
       const newSettings = message.settings;
       orchestrator.updateSettings(newSettings);
+
+      // Keep DOM language attribute in sync so page JS can read current language
+      if (newSettings.language) {
+        document.documentElement.dataset.vtLanguage = newSettings.language;
+      }
 
       // Re-wire response watcher if TTS settings changed
       if (newSettings.ttsEnabled !== undefined || newSettings.customSelectors !== undefined) {
