@@ -115,7 +115,7 @@ const voiceOrchestrator = (() => {
       chrome.runtime.sendMessage({
         type:     MSG.START_RECORDING,
         language: _settings.language,
-      });
+      }).catch(e => console.warn('[VocalTwist] START_RECORDING error:', e.message));
     }
   }
 
@@ -145,6 +145,12 @@ const voiceOrchestrator = (() => {
   function speak(text) {
     if (!_settings?.ttsEnabled) return;
     if (!text?.trim()) return;
+
+    const providerName = _backendOnline ? 'vocaltwist' : 'native';
+    // Write to DOM so Playwright (main world) can observe which provider fired
+    document.documentElement.dataset.vtLastSpeakProvider = providerName;
+    document.documentElement.dataset.vtLastSpeakLang     = _settings?.language || '';
+    document.documentElement.dataset.vtLastSpeakTs       = Date.now().toString();
 
     _isSpeaking = true;
 

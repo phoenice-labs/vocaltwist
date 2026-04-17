@@ -14,8 +14,9 @@ import { DEFAULTS, BACKEND_PROBE_INTERVAL_MS, BACKEND_PROBE_TIMEOUT_MS } from '.
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-let backendOnline   = false;
-let offscreenActive = false;
+let backendOnline      = false;
+let offscreenActive    = false;
+let recordingTabId     = null;   // Tab that initiated the last START_RECORDING
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
@@ -115,11 +116,19 @@ async function handleMessage(message, sender, sendResponse) {
 
   switch (message.type) {
     case MSG.GET_PROVIDER_STATUS:
+      // Run a fresh probe when we think the backend is offline — avoids the
+      // race where the initial probe fires before any tabs are open and the
+      // PROVIDER_CHANGED broadcast is lost.
+      if (!backendOnline) {
+        await probeBackend();
+      }
       sendResponse({ backend: backendOnline });
       break;
 
     case MSG.START_RECORDING: {
       await ensureOffscreenDocument();
+      // Remember which tab requested recording so we can relay the audio back
+      recordingTabId = sender?.tab?.id ?? null;
       updateBadge(true);
       chrome.runtime.sendMessage({
         type:         MSG.OFFSCREEN_RECORD_START,
@@ -152,14 +161,22 @@ async function handleMessage(message, sender, sendResponse) {
     }
 
     case MSG.OFFSCREEN_AUDIO_READY: {
-      // Relay transcription result back to the tab that started recording
-      const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-      if (tabs[0]?.id) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: MSG.OFFSCREEN_AUDIO_READY,
+      // Relay audio back to the tab that started recording.
+      // Fall back to active tab if recordingTabId was not captured.
+      let targetTabId = recordingTabId;
+      if (!targetTabId) {
+        const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        targetTabId = tabs[0]?.id ?? null;
+      }
+      console.log('[VT BG] OFFSCREEN_AUDIO_READY → relaying to tabId=' + targetTabId);
+      recordingTabId = null;
+      if (targetTabId) {
+        chrome.tabs.sendMessage(targetTabId, {
+          type:   MSG.OFFSCREEN_AUDIO_READY,
           buffer: message.buffer,
+          mime:   message.mime,
           backendOnline,
-        }).catch(() => {});
+        }).catch(e => console.warn('[VT BG] relay OFFSCREEN_AUDIO_READY error:', e.message));
       }
       break;
     }

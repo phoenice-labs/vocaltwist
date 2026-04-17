@@ -143,15 +143,31 @@ def test_page(browser_context: BrowserContext, ext_id: str) -> Page:
 
     # Wait for content script sentinel attribute
     page.wait_for_selector("[data-vt-loaded='1']", timeout=15_000)
-    time.sleep(1)  # Allow orchestrator + response-watcher init to settle
+
+    # Wait until the content script has confirmed backend is online.
+    # The GET_PROVIDER_STATUS call now does a live probe if needed (up to 5s).
+    try:
+        page.wait_for_function(
+            "document.documentElement.dataset.vtBackendOnline === 'true'",
+            timeout=10_000,
+        )
+    except Exception:
+        status = page.evaluate(
+            "document.documentElement.dataset.vtBackendOnline || 'not-set'"
+        )
+        raise RuntimeError(
+            f"Backend not detected as online after 10s (vtBackendOnline='{status}'). "
+            f"Is the VocalTwist backend running at {TEST_PAGE_URL.rsplit('/',1)[0]}?"
+        )
     return page
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 
-def _set_language(ctx: BrowserContext, ext_id: str, bcp47: str) -> None:
-    """Open the extension popup, select *bcp47*, save, and close."""
+def _set_language(ctx: BrowserContext, ext_id: str, bcp47: str, page: Page = None) -> None:
+    """Open the extension popup, select *bcp47*, save, and close.
+    If *page* is provided, waits until data-vt-language attribute syncs."""
     popup = ctx.new_page()
     try:
         popup.goto(f"chrome-extension://{ext_id}/popup/popup.html")
@@ -165,8 +181,25 @@ def _set_language(ctx: BrowserContext, ext_id: str, bcp47: str) -> None:
         )
     finally:
         popup.close()
-    # Allow SETTINGS_UPDATED broadcast to reach the test-page content script
-    time.sleep(0.8)
+
+    # Wait for SETTINGS_UPDATED to reach the content script and update vtLanguage
+    if page is not None:
+        try:
+            page.wait_for_function(
+                f"document.documentElement.dataset.vtLanguage === '{bcp47}'",
+                timeout=5_000,
+            )
+        except Exception:
+            actual = page.evaluate(
+                "document.documentElement.dataset.vtLanguage || 'not-set'"
+            )
+            raise RuntimeError(
+                f"data-vt-language never updated to '{bcp47}' (got '{actual}'). "
+                "SETTINGS_UPDATED broadcast may not have reached the content script."
+            )
+    else:
+        # Allow SETTINGS_UPDATED broadcast to reach the test-page content script
+        time.sleep(0.8)
 
 
 def _inject_ai_response(page: Page, text: str) -> None:
@@ -216,6 +249,57 @@ def _toggle_mic(ctx: BrowserContext, page: Page) -> None:
     )
 
 
+def _inject_audio_to_content(ctx: BrowserContext, page: Page) -> None:
+    """Bypass the offscreen microphone by injecting OFFSCREEN_AUDIO_READY directly.
+
+    Offscreen documents in Playwright's headless-new / fake-device environment
+    may not receive the synthetic mic stream.  This helper sends a minimal
+    silent WAV blob directly to the content script so we can test the
+    language-routing path (content → stt-vocaltwist.js → /api/transcribe)
+    without depending on the recording pipeline.
+
+    The WAV is 44 bytes: a valid empty PCM file (0 samples).  The backend
+    middleware captures the ?language= query param *before* Whisper sees the
+    audio, so the transcript result does not matter.
+    """
+    workers = ctx.service_workers
+    assert workers, "Background service worker not running"
+    tab_url = page.url
+    workers[0].evaluate(
+        """async (url) => {
+            // Minimal 44-byte WAV: RIFF header, fmt chunk, empty data chunk
+            const wav = new Uint8Array([
+                // RIFF header
+                0x52,0x49,0x46,0x46,  // "RIFF"
+                0x24,0x00,0x00,0x00,  // file size - 8 = 36
+                0x57,0x41,0x56,0x45,  // "WAVE"
+                // fmt chunk
+                0x66,0x6D,0x74,0x20,  // "fmt "
+                0x10,0x00,0x00,0x00,  // chunk size = 16
+                0x01,0x00,            // PCM format
+                0x01,0x00,            // 1 channel
+                0x40,0x1F,0x00,0x00,  // 8000 Hz sample rate
+                0x40,0x1F,0x00,0x00,  // 8000 bytes/sec
+                0x01,0x00,            // block align
+                0x08,0x00,            // 8 bits per sample
+                // data chunk
+                0x64,0x61,0x74,0x61,  // "data"
+                0x00,0x00,0x00,0x00,  // 0 data bytes
+            ]);
+            const tabs = await chrome.tabs.query({ url });
+            if (tabs.length > 0) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type:         'OFFSCREEN_AUDIO_READY',
+                    buffer:       Array.from(wav),
+                    mime:         'audio/wav',
+                    backendOnline: true,
+                });
+            }
+        }""",
+        tab_url,
+    )
+
+
 def _reset_captures() -> None:
     """Clear server-side test capture state."""
     httpx.post(f"{BACKEND_URL}/api/test/reset", timeout=5)
@@ -243,7 +327,12 @@ def test_tts_language(
 ) -> None:
     """Extension sends correct ISO-639-1 language code to /api/speak."""
     _reset_captures()
-    _set_language(browser_context, ext_id, lang.bcp47)
+    _set_language(browser_context, ext_id, lang.bcp47, test_page)
+
+    # Read DOM diagnostics set by content.js after init / PROVIDER_CHANGED
+    backend_online_attr = test_page.evaluate(
+        "document.documentElement.dataset.vtBackendOnline || 'not-set'"
+    )
 
     # Unique text per language so response-watcher's _lastText guard doesn't block
     test_text = (
@@ -256,10 +345,22 @@ def test_tts_language(
     # Wait: TTS_DEBOUNCE_MS (1.5 s) + network + AudioContext decode
     time.sleep(TTS_WAIT_S)
 
+    # Read which provider fired (written to DOM by voice-orchestrator.js speak())
+    provider_attr = test_page.evaluate(
+        "document.documentElement.dataset.vtLastSpeakProvider || 'not-called'"
+    )
+    speak_lang_attr = test_page.evaluate(
+        "document.documentElement.dataset.vtLastSpeakLang || ''"
+    )
+
     data = _last_speak()
     assert data, (
         f"[{lang.bcp47}] No /api/speak request captured. "
-        "TTS may be disabled, backend offline, or response-watcher not triggered."
+        f"DOM diagnostics: backendOnline='{backend_online_attr}', "
+        f"lastSpeakProvider='{provider_attr}', lastSpeakLang='{speak_lang_attr}'. "
+        "If provider='native', extension initialized with backendOnline=false. "
+        "If provider='not-called', response-watcher did not trigger orchestrator.speak(). "
+        "If provider='vocaltwist' but no capture, the fetch to /api/speak failed silently."
     )
     got = data.get("language")
     assert got == lang.code, (
@@ -278,23 +379,29 @@ def test_stt_language(
     test_page: Page,
     lang: LangCase,
 ) -> None:
-    """Extension sends correct ISO-639-1 language code to /api/transcribe."""
-    _reset_captures()
-    _set_language(browser_context, ext_id, lang.bcp47)
+    """Extension sends correct ISO-639-1 language code to /api/transcribe.
 
-    # Focus the textarea so the content script knows where to inject transcripts
+    Rather than relying on offscreen getUserMedia (which is unreliable with
+    Playwright's fake-device flag), this test injects OFFSCREEN_AUDIO_READY
+    directly from the service worker context with a synthetic silent WAV blob.
+    This exercises the full path: content.js handleAudioBlob → stt-vocaltwist.js
+    transcribe() → POST /api/transcribe?language=<code>.
+    """
+    _reset_captures()
+    _set_language(browser_context, ext_id, lang.bcp47, test_page)
+
+    # Focus the textarea so content script knows where to inject the transcript
     test_page.click("#user-input")
     time.sleep(0.3)
 
-    # Start recording (equivalent to Ctrl+Shift+V)
-    _toggle_mic(browser_context, test_page)
-    time.sleep(STT_RECORD_S)
+    # Inject synthetic audio directly — bypasses the offscreen microphone
+    # Allow 500ms for the storage.onChanged → orchestrator.updateSettings → DOM sync
+    # to complete fully before audio arrives at the content script.
+    time.sleep(0.5)
+    _inject_audio_to_content(browser_context, test_page)
 
-    # Stop recording (second TOGGLE_MIC)
-    _toggle_mic(browser_context, test_page)
-
-    # Wait for offscreen to process audio, background to relay, orchestrator to
-    # call sttProvider.transcribe(), and Whisper to respond
+    # Wait for the content script to receive the buffer, call stt-vocaltwist.js,
+    # and POST /api/transcribe.  Whisper processing can be slow.
     deadline = time.monotonic() + STT_PROCESS_S
     data: dict = {}
     while time.monotonic() < deadline:
@@ -306,14 +413,13 @@ def test_stt_language(
     assert data, (
         f"[{lang.bcp47}] No /api/transcribe request captured within "
         f"{STT_PROCESS_S:.0f} s. "
-        "Check that the backend is online, fake-device audio is enabled, "
-        "and the extension is in push-to-talk mode."
+        "handleAudioBlob() was not called or stt-vocaltwist.js fetch to "
+        "/api/transcribe failed silently. "
+        "Check that vtBackendOnline=true and voice-orchestrator.js received "
+        "the OFFSCREEN_AUDIO_READY message."
     )
     got = data.get("language")
     assert got == lang.code, (
         f"[{lang.bcp47}] Expected ?language={lang.code} in /api/transcribe URL, "
         f"got '{got}'. Check stt-vocaltwist.js BCP-47 normalization."
     )
-
-    # Brief pause between STT tests to respect /api/transcribe rate limit (20/min)
-    time.sleep(3)

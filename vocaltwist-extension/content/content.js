@@ -49,15 +49,29 @@ function getCustomSelectorForSite(settings) {
 
 // ─── Initialization ────────────────────────────────────────────────────────────
 
+/** Direct content-script health check — bypasses the background SW race. */
+async function checkBackendDirect(backendUrl) {
+  try {
+    const url = (backendUrl || DEFAULTS.backendUrl).replace(/\/$/, '');
+    const res = await fetch(`${url}/api/health`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function init() {
   // Load settings and backend status
   let settings, backendOnline;
   try {
-    // Wrap sendMessage with a 3-second timeout — MV3 service worker wakeup can
-    // cause the message to hang if the worker was just being started.
+    // Wrap sendMessage with a 5-second timeout — MV3 service worker wakeup
+    // plus the live backend probe it runs when backendOnline=false can take
+    // 2-3 seconds in Docker/WSL2 environments.
     const resp = await Promise.race([
       chrome.runtime.sendMessage({ type: MSG.GET_PROVIDER_STATUS }),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
     ]);
     backendOnline = resp?.backend ?? false;
     settings    = await new Promise((resolve) => {
@@ -68,6 +82,12 @@ async function init() {
     backendOnline = false;
   }
 
+  // If the SW says offline, do a direct probe from the content script.
+  // This covers the race where the SW's initial broadcast was lost.
+  if (!backendOnline) {
+    backendOnline = await checkBackendDirect(settings?.backendUrl);
+  }
+
   if (!settings.enabled) return;
   if (isSiteDisabled(settings)) return;
 
@@ -75,7 +95,10 @@ async function init() {
   orchestrator.init(settings, backendOnline);
 
   // Expose current language for the test page (reads dataset.vtLanguage)
-  document.documentElement.dataset.vtLanguage = settings.language || 'en-US';
+  document.documentElement.dataset.vtLanguage    = settings.language || 'en-US';
+  document.documentElement.dataset.vtBackendOnline = String(backendOnline);
+
+  console.log('[VocalTwist] init backendOnline=' + backendOnline + ' lang=' + settings.language);
 
   // Wire mic button click → toggle recording
   micBtn.setOnClick((currentState) => {
@@ -161,6 +184,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   switch (message.type) {
     case MSG.PROVIDER_CHANGED:
       orchestrator.setBackendStatus(message.backend);
+      document.documentElement.dataset.vtBackendOnline = String(message.backend);
       sendResponse({ ok: true });
       break;
 
@@ -221,6 +245,36 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   return true; // Keep channel open for async
+});
+
+// ─── Storage-change listener (catches settings saved by popup) ────────────────
+// chrome.storage.onChanged fires in the content script world directly — more
+// reliable than waiting for the background SW to broadcast SETTINGS_UPDATED.
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'sync') return;
+
+  const patch = {};
+  for (const [key, { newValue }] of Object.entries(changes)) {
+    patch[key] = newValue;
+  }
+
+  orchestrator.updateSettings(patch);
+
+  if (patch.language) {
+    document.documentElement.dataset.vtLanguage = patch.language;
+    console.log('[VocalTwist] storage.onChanged language=' + patch.language);
+  }
+
+  // Re-wire response watcher if TTS settings changed
+  if (patch.ttsEnabled !== undefined || patch.customSelectors !== undefined) {
+    respWatcher.stop();
+    const merged = { ...orchestrator.settings, ...patch };
+    if (merged.ttsEnabled) {
+      const custom = getCustomSelectorForSite(merged);
+      respWatcher.start((text) => orchestrator.speak(text), custom);
+    }
+  }
 });
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────────
