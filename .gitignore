@@ -77,3 +77,14 @@ models/
 *.bak
 *.swp
 plan.md
+
+# ── Moved to vocaltwist-chrome-extention repo ─────────────────────────────────
+# Chrome extension source and Docker deployment files have been relocated to:
+#   https://github.com/phoenice-labs/vocaltwist-chrome-extention
+vocaltwist-extension/
+Dockerfile
+docker-compose.yml
+docker-manage.ps1
+build.ps1
+start.ps1
+vocaltwist-extension-plan.md
